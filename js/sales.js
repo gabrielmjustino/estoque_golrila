@@ -19,35 +19,54 @@ const Sales = {
   render: () => {
     const tbody = document.getElementById('sold-tbody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     if (Sales.history.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
       return;
     }
 
     // Supabase returns sorted by date already
     const sortedSales = Sales.history;
 
+    const fragment = document.createDocumentFragment();
+
     sortedSales.forEach(sale => {
-      const dateObj = new Date(sale.date);
-      const formattedDate = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      // Defensively handle missing/null date
+      let formattedDate = '—';
+      if (sale.date) {
+        const dateObj = new Date(sale.date);
+        if (!isNaN(dateObj.getTime())) {
+          formattedDate = dateObj.toLocaleDateString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+        }
+      }
+
+      const productName   = sale.product_name   || '—';
+      const qtdSold       = sale.qtd_sold        ?? '?';
+      const paymentMethod = sale.payment_method  || 'Dinheiro';
+      const buyerName     = sale.buyer_name      || '—';
+      const sellerName    = sale.seller_name     || '—';
+
       const tr = document.createElement('tr');
-      
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
-        <td style="font-weight: 500;">${sale.product_name}</td>
-        <td><span class="tag qtd danger">-${sale.qtd_sold} uni.</span></td>
-        <td><span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">${sale.payment_method || 'Dinheiro'}</span></td>
-        <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${sale.buyer_name}</td>
-        <td><i class='bx bxs-badge-check' style="color:var(--primary); margin-right:4px;"></i> ${sale.seller_name}</td>
+        <td style="font-weight: 500;">${productName}</td>
+        <td><span class="tag qtd danger">-${qtdSold} uni.</span></td>
+        <td><span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">${paymentMethod}</span></td>
+        <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${buyerName}</td>
+        <td><i class='bx bxs-badge-check' style="color:var(--primary); margin-right:4px;"></i> ${sellerName}</td>
         <td>
           <button class="btn-icon delete" onclick="Sales.cancelSale('${sale.id}')" title="Cancelar Venda e Devolver Estoque"><i class='bx bx-x-circle'></i></button>
         </td>
       `;
-      tbody.appendChild(tr);
+      fragment.appendChild(tr);
     });
+
+    tbody.appendChild(fragment);
   },
 
   setupEventListeners: () => {
@@ -66,7 +85,7 @@ const Sales = {
 
     if (btnCloseSell) btnCloseSell.addEventListener('click', closeModal);
     if (btnCancelSell) btnCancelSell.addEventListener('click', closeModal);
-    
+
     // Close modal on click outside
     if (modalSell) {
       modalSell.addEventListener('click', (e) => {
@@ -77,11 +96,11 @@ const Sales = {
     if (formSell) {
       formSell.addEventListener('submit', (e) => {
         e.preventDefault();
-        
-        const productId = document.getElementById('sell-product-id').value;
-        const buyerName = document.getElementById('sell-buyer').value;
-        const sellerName = document.getElementById('sell-seller').value;
-        const qtdSold = parseInt(document.getElementById('sell-qtd').value);
+
+        const productId     = document.getElementById('sell-product-id').value;
+        const buyerName     = document.getElementById('sell-buyer').value;
+        const sellerName    = document.getElementById('sell-seller').value;
+        const qtdSold       = parseInt(document.getElementById('sell-qtd').value);
         const paymentMethod = document.getElementById('sell-payment-method').value;
 
         Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod);
@@ -103,12 +122,12 @@ const Sales = {
     }
 
     // Populate Modal Data
-    document.getElementById('sell-product-id').value = product.id;
+    document.getElementById('sell-product-id').value   = product.id;
     document.getElementById('sell-product-name').textContent = product.name;
-    document.getElementById('sell-product-max').textContent = `Máx disponível: ${product.qtd}`;
-    document.getElementById('sell-qtd').max = product.qtd;
+    document.getElementById('sell-product-max').textContent  = `Máx disponível: ${product.qtd}`;
+    document.getElementById('sell-qtd').max   = product.qtd;
     document.getElementById('sell-qtd').value = 1; // Default to 1
-    
+
     // Auto fill seller input if possible
     const currentSession = Auth.getCurrentUser();
     if(currentSession) {
@@ -123,41 +142,46 @@ const Sales = {
       return;
     }
 
-    const saleIndex = Sales.history.findIndex(s => s.id === saleId);
-    if (saleIndex === -1) {
+    const sale = Sales.history.find(s => s.id === saleId);
+    if (!sale) {
       Toast.show('Venda não encontrada.', 'error');
       return;
     }
 
-    const sale = Sales.history[saleIndex];
-    
-    // Transact (Deduct from inventory back)
-    const pIndex = Inventory.products.findIndex(p => p.id === sale.product_id); // using snake_case product_id
+    const pIndex = Inventory.products.findIndex(p => p.id === sale.product_id);
+
+    // Run inventory restore + sale delete in parallel
+    const ops = [AppSupabase.from('sales').delete().eq('id', saleId)];
+
     if (pIndex !== -1) {
-      const newQtd = Inventory.products[pIndex].qtd + sale.qtd_sold; // using snake_case
-      const { error: invError } = await AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', sale.product_id);
-      if (!invError) {
-        await Inventory.load();
-        Inventory.render();
-      }
+      const newQtd = Inventory.products[pIndex].qtd + sale.qtd_sold;
+      ops.push(AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', sale.product_id));
     } else {
-      // Caso o produto original tenha sido deletado
       Toast.show('Aviso: O produto original foi excluído. Venda removida sem devolver o estoque.', 'warning');
     }
 
-    // Remove sale history via Supabase
-    const { error: delError } = await AppSupabase.from('sales').delete().eq('id', saleId);
-    if (!delError) {
-      await Sales.load();
+    const results = await Promise.all(ops);
+    const hasError = results.some(r => r.error);
+
+    if (!hasError) {
+      // Optimistically update local state (no extra DB round-trips)
+      Sales.history = Sales.history.filter(s => s.id !== saleId);
       Sales.render();
-    }
 
-    // Trigger Admin refresh if loaded
-    if (typeof Admin !== 'undefined' && Admin.renderStats) {
-      Admin.renderStats();
-    }
+      if (pIndex !== -1) {
+        Inventory.products[pIndex].qtd += sale.qtd_sold;
+        Inventory.render();
+      }
 
-    Toast.show('Venda cancelada com sucesso.', 'info');
+      // Trigger Admin refresh if loaded
+      if (typeof Admin !== 'undefined' && Admin.renderStats) {
+        Admin.renderStats();
+      }
+
+      Toast.show('Venda cancelada com sucesso.', 'info');
+    } else {
+      Toast.show('Erro ao cancelar venda. Tente novamente.', 'error');
+    }
   },
 
   processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod) => {
@@ -172,33 +196,38 @@ const Sales = {
       return;
     }
 
-    // 2. Transact (Deduct from inventory base)
-    const newQtd = Inventory.products[pIndex].qtd - qtdSold;
-    const { error: invError } = await AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId);
-    
-    if (invError) {
+    // Capture product name BEFORE any async reload (avoids stale index bug)
+    const productName = Inventory.products[pIndex].name;
+    const newQtd      = Inventory.products[pIndex].qtd - qtdSold;
+
+    // Run inventory update + sale insert in parallel
+    const [invResult, saleResult] = await Promise.all([
+      AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
+      AppSupabase.from('sales').insert([{
+        product_id:     productId,
+        product_name:   productName,
+        buyer_name:     buyerName,
+        seller_name:    sellerName,
+        qtd_sold:       qtdSold,
+        payment_method: paymentMethod
+      }])
+    ]);
+
+    if (invResult.error) {
       Toast.show('Erro ao deduzir o estoque.', 'error');
       return;
     }
 
-    await Inventory.load();
-    Inventory.render();
-
-    // 3. Record Sale directly to Supabase
-    const { error: saleError } = await AppSupabase.from('sales').insert([{
-      product_id: productId,
-      product_name: Inventory.products[pIndex].name,
-      buyer_name: buyerName,
-      seller_name: sellerName,
-      qtd_sold: qtdSold,
-      payment_method: paymentMethod
-    }]);
-
-    if(saleError) {
+    if (saleResult.error) {
       Toast.show('Venda não autorizada pelo banco de dados.', 'error');
       return;
     }
 
+    // Optimistically update local state
+    Inventory.products[pIndex].qtd = newQtd;
+    Inventory.render();
+
+    // Reload only sales (to get the newly inserted row with server timestamp)
     await Sales.load();
     Sales.render();
 

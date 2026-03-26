@@ -122,9 +122,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       roleBadge.style.color = '#34d399';
     }
 
-    // Inicializa Módulos (com dados do Supabase)
-    if (typeof Inventory !== 'undefined') await Inventory.init();
-    if (typeof Sales !== 'undefined') await Sales.init();
+    // Inicializa Módulos em paralelo (Inventory + Sales ao mesmo tempo)
+    const initTasks = [];
+    if (typeof Inventory !== 'undefined') initTasks.push(Inventory.init());
+    if (typeof Sales !== 'undefined') initTasks.push(Sales.init());
+    await Promise.all(initTasks);
+
+    // Admin depende dos dados já carregados
     if (user.role === 'admin' && typeof Admin !== 'undefined') await Admin.init();
   }
 });
