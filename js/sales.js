@@ -37,10 +37,11 @@ const Sales = {
       
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
-        <td style="font-weight: 500;">${sale.productName}</td>
-        <td><span class="tag qtd danger">-${sale.qtdSold} uni.</span></td>
-        <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${sale.buyerName}</td>
-        <td><i class='bx bxs-badge-check' style="color:var(--primary); margin-right:4px;"></i> ${sale.sellerName}</td>
+        <td style="font-weight: 500;">${sale.product_name}</td>
+        <td><span class="tag qtd danger">-${sale.qtd_sold} uni.</span></td>
+        <td><span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">${sale.payment_method || 'Dinheiro'}</span></td>
+        <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${sale.buyer_name}</td>
+        <td><i class='bx bxs-badge-check' style="color:var(--primary); margin-right:4px;"></i> ${sale.seller_name}</td>
         <td>
           <button class="btn-icon delete" onclick="Sales.cancelSale('${sale.id}')" title="Cancelar Venda e Devolver Estoque"><i class='bx bx-x-circle'></i></button>
         </td>
@@ -81,8 +82,9 @@ const Sales = {
         const buyerName = document.getElementById('sell-buyer').value;
         const sellerName = document.getElementById('sell-seller').value;
         const qtdSold = parseInt(document.getElementById('sell-qtd').value);
+        const paymentMethod = document.getElementById('sell-payment-method').value;
 
-        Sales.processSale(productId, buyerName, sellerName, qtdSold);
+        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod);
       });
     }
   },
@@ -158,7 +160,7 @@ const Sales = {
     Toast.show('Venda cancelada com sucesso.', 'info');
   },
 
-  processSale: async (productId, buyerName, sellerName, qtdSold) => {
+  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Desculpe, ocorreu um erro na leitura do inventário.', 'error');
@@ -188,7 +190,8 @@ const Sales = {
       product_name: Inventory.products[pIndex].name,
       buyer_name: buyerName,
       seller_name: sellerName,
-      qtd_sold: qtdSold
+      qtd_sold: qtdSold,
+      payment_method: paymentMethod
     }]);
 
     if(saleError) {

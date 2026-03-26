@@ -26,13 +26,14 @@ const Admin = {
       return;
     }
     if (confirm(`Tem certeza que deseja desativar o usuário "${user.name}"?`)) {
-      const { error } = await AppSupabase.from('profiles').delete().eq('id', id);
+      const { error } = await AppSupabase.rpc('delete_user_admin', { user_id: id });
       if (!error) {
         await Admin.loadUsers();
         Admin.renderUsers();
         await Admin.renderStats();
         Toast.show('Perfil removido com sucesso.', 'info');
       } else {
+        console.error(error);
         Toast.show('Erro ao excluir usuário.', 'error');
       }
     }

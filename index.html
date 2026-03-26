@@ -250,6 +250,7 @@
                     <th>Data/Hora</th>
                     <th>Produto</th>
                     <th>Qtd. Vendida</th>
+                    <th>Pagamento</th>
                     <th>Comprador (Cliente)</th>
                     <th>Vendedor (Operador)</th>
                     <th>Ações</th>
@@ -318,6 +319,16 @@
             <div class="input-group" style="grid-column: span 2;">
               <label>Quantidade a Vender (<span id="sell-product-max"></span>)</label>
               <input type="number" id="sell-qtd" min="1" required>
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+              <label>Forma de Pagamento</label>
+              <select id="sell-payment-method" class="form-select" required>
+                <option value="Dinheiro">Dinheiro 💸</option>
+                <option value="Pix">Pix ⚡</option>
+                <option value="Cartão de Crédito">Cartão de Crédito 💳</option>
+                <option value="Cartão de Débito">Cartão de Débito 💳</option>
+                <option value="Boleto / Prazo">Boleto / Prazo 📄</option>
+              </select>
             </div>
           </div>
           <div class="modal-footer">
