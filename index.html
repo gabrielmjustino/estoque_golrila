@@ -55,10 +55,8 @@
         </div>
       </div>
       <nav class="nav-links">
-        <li><a href="#" data-target="dashboard-view" id="nav-dashboard" class="nav-item" style="display: none;"><i
-              class='bx bx-grid-alt'></i> Painel Admin</a></li>
-        <li><a href="#" data-target="inventory-view" class="nav-item active"><i class='bx bx-package'></i> Estoque
-            (Entradas)</a></li>
+        <li><a href="#" data-target="dashboard-view" id="nav-dashboard" class="nav-item" style="display: none;"><i class='bx bx-grid-alt'></i> Painel Admin</a></li>
+        <li><a href="#" data-target="inventory-view" class="nav-item active"><i class='bx bx-package'></i> Estoque (Entradas)</a></li>
         <li><a href="#" data-target="sold-view" class="nav-item"><i class='bx bx-cart'></i> Saídas (Vendidos)</a></li>
         <li><a href="#" data-target="settings-view" class="nav-item"><i class='bx bx-cog'></i> Configurações</a></li>
       </nav>
@@ -73,7 +71,8 @@
       </header>
 
       <div class="content-area">
-        <!-- Sub-views onde os conteúdos reais serão carregados via JS -->
+
+        <!-- ========== DASHBOARD VIEW ========== -->
         <div id="dashboard-view" class="sub-view">
           <div class="view-header">
             <div>
@@ -84,32 +83,28 @@
 
           <div class="dashboard-stats mt-4">
             <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(252, 191, 0, 0.15); color: var(--primary);"><i
-                  class='bx bx-package'></i></div>
+              <div class="stat-icon" style="background: rgba(252, 191, 0, 0.15); color: var(--primary);"><i class='bx bx-package'></i></div>
               <div class="stat-details">
                 <h3 id="stat-total-products">0</h3>
                 <p>Itens Diferentes</p>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i
-                  class='bx bx-cart'></i></div>
+              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class='bx bx-cart'></i></div>
               <div class="stat-details">
                 <h3 id="stat-total-sales">0</h3>
                 <p>Vendas Realizadas</p>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i
-                  class='bx bx-shopping-bag'></i></div>
+              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class='bx bx-shopping-bag'></i></div>
               <div class="stat-details">
                 <h3 id="stat-total-items-sold">0</h3>
                 <p>Unidades Vendidas</p>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i
-                  class='bx bx-group'></i></div>
+              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i class='bx bx-group'></i></div>
               <div class="stat-details">
                 <h3 id="stat-total-users">1</h3>
                 <p>Compradores / Equipe</p>
@@ -165,6 +160,7 @@
           </div>
         </div>
 
+        <!-- ========== INVENTORY VIEW ========== -->
         <div id="inventory-view" class="sub-view active">
           <div class="view-header">
             <div>
@@ -231,6 +227,7 @@
                 </div>
               </form>
             </div>
+          </div>
 
           <!-- Modal Edit Product -->
           <div id="modal-edit-product" class="modal">
@@ -270,8 +267,10 @@
                 </div>
               </form>
             </div>
+          </div>
         </div>
 
+        <!-- ========== SOLD VIEW ========== -->
         <div id="sold-view" class="sub-view">
           <div class="view-header">
             <div>
@@ -302,6 +301,7 @@
           </div>
         </div>
 
+        <!-- ========== SETTINGS VIEW ========== -->
         <div id="settings-view" class="sub-view">
           <div class="view-header">
             <div>
@@ -309,7 +309,7 @@
               <p class="text-muted">Gerencie sua conta e sessão atual.</p>
             </div>
           </div>
-          
+
           <div class="card mt-4" style="max-width: 500px;">
             <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Alterar Senha</h3>
             <form id="form-change-password">
@@ -333,6 +333,7 @@
             </button>
           </div>
         </div>
+
       </div>
     </main>
 
