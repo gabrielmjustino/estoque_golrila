@@ -102,14 +102,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Perfilamentos Visuais e Restrições Básicas no Layout
     if (user.role === 'admin') {
-      roleBadge.textContent = 'Admin. Global';
+      roleBadge.textContent = 'Admin. Global☁️';
       roleBadge.style.background = 'rgba(99, 102, 241, 0.15)';
       roleBadge.style.color = '#FCBF00';
 
       // Exibe menu do dashboard do admin
       document.getElementById('nav-dashboard').style.display = 'flex';
     } else {
-      roleBadge.textContent = 'Operador Padrão';
+      roleBadge.textContent = 'Operador Padrão☁️';
       roleBadge.style.background = 'rgba(16, 185, 129, 0.15)';
       roleBadge.style.color = '#34d399';
     }

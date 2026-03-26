@@ -16,8 +16,13 @@ const Auth = {
 
   loadProfile: async (userId) => {
     const { data, error } = await AppSupabase.from('profiles').select('*').eq('id', userId).single();
+    if (error) {
+      console.error('Falha ao carregar profile:', error);
+      if (typeof Toast !== 'undefined') Toast.show('Erro Crítico ao carregar Perfil do BD!', 'error');
+    }
     if (!error && data) {
       Auth.currentProfile = data;
+      console.log('Profile loaded successfully:', data.role);
     }
   },
 
