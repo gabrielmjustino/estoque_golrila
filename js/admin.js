@@ -2,47 +2,53 @@
 const Admin = {
   users: [],
 
-  init: () => {
+  init: async () => {
     if (!Auth.isAdmin()) return;
 
-    Admin.loadUsers();
-    Admin.renderStats();
+    await Admin.loadUsers();
+    await Admin.renderStats();
     Admin.renderUsers();
     Admin.setupEventListeners();
   },
 
-  loadUsers: () => {
-    Admin.users = Storage.get('nexus_users', []);
+  loadUsers: async () => {
+    const { data, error } = await AppSupabase.from('profiles').select('*').order('username');
+    if (!error && data) {
+      Admin.users = data;
+    }
   },
 
-  deleteUser: (id) => {
+  deleteUser: async (id) => {
     const user = Admin.users.find(u => u.id === id);
     if (!user) return;
     if (user.username === 'Justino' || user.username === 'admin') {
       Toast.show('O administrador principal não pode ser excluído!', 'error');
       return;
     }
-    if (confirm(`Tem certeza que deseja excluir o usuário "${user.name}" definitivamente?`)) {
-      Admin.users = Admin.users.filter(u => u.id !== id);
-      Storage.set('nexus_users', Admin.users);
-      Admin.renderUsers();
-      Admin.renderStats();
-      Toast.show('Usuário excluído com sucesso.', 'info');
+    if (confirm(`Tem certeza que deseja desativar o usuário "${user.name}"?`)) {
+      const { error } = await AppSupabase.from('profiles').delete().eq('id', id);
+      if (!error) {
+        await Admin.loadUsers();
+        Admin.renderUsers();
+        await Admin.renderStats();
+        Toast.show('Perfil removido com sucesso.', 'info');
+      } else {
+        Toast.show('Erro ao excluir usuário.', 'error');
+      }
     }
   },
 
-  renderStats: () => {
-    // Calculo de Meticas a partir do LocalStorage
-    const inventory = Storage.get('nexus_inventory', []);
-    const totalProducts = inventory.length; // Quantidade de itens/variáveis unicas
-
-    const sales = Storage.get('nexus_sales', []);
-    const totalSales = sales.length; // Quantas operacoes de venda
-    const totalItemsSold = sales.reduce((sum, sale) => sum + parseInt(sale.qtdSold), 0);
+  renderStats: async () => {
+    // Calculo de Meticas a partir do Supabase
+    const { count: inventoryCount } = await AppSupabase.from('inventory').select('*', { count: 'exact', head: true });
+    
+    const { data: salesData } = await AppSupabase.from('sales').select('qtd_sold');
+    const totalSales = salesData ? salesData.length : 0;
+    const totalItemsSold = salesData ? salesData.reduce((sum, sale) => sum + parseInt(sale.qtd_sold), 0) : 0;
 
     // UI Update
     if (document.getElementById('stat-total-products')) {
-      document.getElementById('stat-total-products').textContent = totalProducts;
+      document.getElementById('stat-total-products').textContent = inventoryCount || 0;
       document.getElementById('stat-total-sales').textContent = totalSales;
       document.getElementById('stat-total-items-sold').textContent = totalItemsSold;
       document.getElementById('stat-total-users').textContent = Admin.users.length;
@@ -80,7 +86,7 @@ const Admin = {
       const newForm = form.cloneNode(true);
       form.parentNode.replaceChild(newForm, form);
 
-      newForm.addEventListener('submit', (e) => {
+      newForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const name = document.getElementById('new-user-name').value;
@@ -95,36 +101,38 @@ const Admin = {
           return;
         }
 
-        const newUser = {
-          id: 'usr_' + Date.now(),
-          username,
-          password,
-          name,
-          role,
-          createdAt: new Date().toISOString()
-        };
+        Toast.show('Criando perfil na nuvem...', 'info');
 
-        Admin.users.push(newUser);
-        Storage.set('nexus_users', Admin.users); // Persiste novo usuário no core
+        // Isolated client para signup sem deslogar o admin atual
+        const adminSignupClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false }
+        });
+
+        const email = username.includes('@') ? username : `${username}@golrila.com`;
+        
+        const { data, error } = await adminSignupClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username, name, role }
+          }
+        });
+
+        if (error) {
+          console.error(error);
+          Toast.show('Falha ao registrar usuário: ' + error.message, 'error');
+          return;
+        }
 
         Toast.show('Acesso concedido e perfil criado!', 'success');
         newForm.reset();
 
+        await Admin.loadUsers();
         Admin.renderUsers();
-        Admin.renderStats();
+        await Admin.renderStats();
       });
     }
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Listeners para toda aba que seja ativada
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      if (item.getAttribute('data-target') === 'dashboard-view') {
-        Admin.init(); // Recarrega gráficos/dados ao clicar
-      }
-    });
-  });
-});
+// Navigation initialization moved to app.js

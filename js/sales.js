@@ -2,18 +2,17 @@
 const Sales = {
   history: [],
 
-  init: () => {
-    Sales.load();
+  init: async () => {
+    await Sales.load();
     Sales.render();
     Sales.setupEventListeners();
   },
 
-  load: () => {
-    Sales.history = Storage.get('nexus_sales', []);
-  },
-
-  save: () => {
-    Storage.set('nexus_sales', Sales.history);
+  load: async () => {
+    const { data, error } = await AppSupabase.from('sales').select('*').order('date', { ascending: false });
+    if (!error && data) {
+      Sales.history = data;
+    }
   },
 
   // Renders the Sold Items table
@@ -28,8 +27,8 @@ const Sales = {
       return;
     }
 
-    // Sort by Date descending (newest sales first)
-    const sortedSales = [...Sales.history].sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Supabase returns sorted by date already
+    const sortedSales = Sales.history;
 
     sortedSales.forEach(sale => {
       const dateObj = new Date(sale.date);
@@ -117,7 +116,7 @@ const Sales = {
     document.getElementById('modal-sell-product').classList.add('active');
   },
 
-  cancelSale: (saleId) => {
+  cancelSale: async (saleId) => {
     if (!confirm('Deseja realmente cancelar esta venda? Os itens serão devolvidos ao estoque.')) {
       return;
     }
@@ -131,20 +130,25 @@ const Sales = {
     const sale = Sales.history[saleIndex];
     
     // Transact (Deduct from inventory back)
-    const pIndex = Inventory.products.findIndex(p => p.id === sale.productId);
+    const pIndex = Inventory.products.findIndex(p => p.id === sale.product_id); // using snake_case product_id
     if (pIndex !== -1) {
-      Inventory.products[pIndex].qtd += sale.qtdSold;
-      Inventory.save();
-      Inventory.render();
+      const newQtd = Inventory.products[pIndex].qtd + sale.qtd_sold; // using snake_case
+      const { error: invError } = await AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', sale.product_id);
+      if (!invError) {
+        await Inventory.load();
+        Inventory.render();
+      }
     } else {
-      // Caso o produto original tenha sido deletado inteiramente do sistema
+      // Caso o produto original tenha sido deletado
       Toast.show('Aviso: O produto original foi excluído. Venda removida sem devolver o estoque.', 'warning');
     }
 
-    // Remove sale history
-    Sales.history.splice(saleIndex, 1);
-    Sales.save();
-    Sales.render();
+    // Remove sale history via Supabase
+    const { error: delError } = await AppSupabase.from('sales').delete().eq('id', saleId);
+    if (!delError) {
+      await Sales.load();
+      Sales.render();
+    }
 
     // Trigger Admin refresh if loaded
     if (typeof Admin !== 'undefined' && Admin.renderStats) {
@@ -154,8 +158,7 @@ const Sales = {
     Toast.show('Venda cancelada com sucesso.', 'info');
   },
 
-  processSale: (productId, buyerName, sellerName, qtdSold) => {
-    // 1. Find product
+  processSale: async (productId, buyerName, sellerName, qtdSold) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Desculpe, ocorreu um erro na leitura do inventário.', 'error');
@@ -167,35 +170,38 @@ const Sales = {
       return;
     }
 
-    // 2. Transact (Deduct from inventory)
-    Inventory.products[pIndex].qtd -= qtdSold;
+    // 2. Transact (Deduct from inventory base)
+    const newQtd = Inventory.products[pIndex].qtd - qtdSold;
+    const { error: invError } = await AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId);
     
-    // If quantity hits exactly 0, one might choose to keep it in DB as history, so we don't delete it.
-    Inventory.save();    // Salva estoque
-    Inventory.render();  // Atualiza UI de estoque
+    if (invError) {
+      Toast.show('Erro ao deduzir o estoque.', 'error');
+      return;
+    }
 
-    // 3. Record Sale
-    const saleRecord = {
-      id: 'sale_' + Date.now().toString(36),
-      productId: productId,
-      productName: Inventory.products[pIndex].name,
-      buyerName: buyerName,
-      sellerName: sellerName,
-      qtdSold: qtdSold,
-      date: new Date().toISOString()
-    };
+    await Inventory.load();
+    Inventory.render();
 
-    Sales.history.push(saleRecord);
-    Sales.save();   // Salva histórico de vendas
-    Sales.render(); // Atualiza UI de histórico
+    // 3. Record Sale directly to Supabase
+    const { error: saleError } = await AppSupabase.from('sales').insert([{
+      product_id: productId,
+      product_name: Inventory.products[pIndex].name,
+      buyer_name: buyerName,
+      seller_name: sellerName,
+      qtd_sold: qtdSold
+    }]);
 
-    Toast.show(`Venda de ${qtdSold}x ${saleRecord.productName} registrada com sucesso!`, 'success');
+    if(saleError) {
+      Toast.show('Venda não autorizada pelo banco de dados.', 'error');
+      return;
+    }
+
+    await Sales.load();
+    Sales.render();
+
+    Toast.show(`Venda registrada com sucesso!`, 'success');
     document.getElementById('modal-sell-product').classList.remove('active');
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('sold-tbody')) {
-    Sales.init();
-  }
-});
+// Initialization is managed by App.showApp async flow

@@ -1,11 +1,8 @@
 // Controlador principal da interface e Inicializador global
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Inicializa dependencias e dados
-  Storage.initCoreData();
-
-  // 2. Verifica autenticacao
-  const isLoggedIn = Auth.init();
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Verifica autenticacao (Supabase)
+  const isLoggedIn = await Auth.init();
   const loginView = document.getElementById('login-view');
   const appView = document.getElementById('app-view');
 
@@ -18,12 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Lidar com envio do form de login
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = document.getElementById('login-username').value;
       const pass = document.getElementById('login-password').value;
 
-      if (Auth.login(user, pass)) {
+      const success = await Auth.login(user, pass);
+      if (success) {
         Toast.show('Autenticação aprovada! Entrando...', 'success');
 
         // Pequeno delay para efeito visual premium
@@ -40,16 +38,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. Lidar com Logout
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
-    btnLogout.addEventListener('click', (e) => {
+    btnLogout.addEventListener('click', async (e) => {
       e.preventDefault();
-      Auth.logout();
+      await Auth.logout();
     });
   }
 
   // 4.5. Lidar com Mudança de Senha
   const formChangePassword = document.getElementById('form-change-password');
   if (formChangePassword) {
-    formChangePassword.addEventListener('submit', (e) => {
+    formChangePassword.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newPass = document.getElementById('new-password-input').value;
       const confirmPass = document.getElementById('confirm-password-input').value;
@@ -59,17 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const currentUser = Auth.getCurrentUser();
-      const users = Storage.get('nexus_users', []);
-      const userIndex = users.findIndex(u => u.username === currentUser.username);
+      const { error } = await AppSupabase.auth.updateUser({ password: newPass });
 
-      if (userIndex !== -1) {
-        users[userIndex].password = newPass;
-        Storage.set('nexus_users', users);
+      if (!error) {
         Toast.show('Senha atualizada com sucesso!', 'success');
         formChangePassword.reset();
       } else {
-        Toast.show('Erro ao localizar usuário no sistema.', 'error');
+        Toast.show('Erro ao atualizar senha no banco de dados.', 'error');
       }
     });
   }
@@ -97,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Funcao Privada para liberar visao ao App principal
-  function showApp() {
+  async function showApp() {
     appView.classList.add('active');
 
     // Configura o UI com os dados do usuário autenticado
@@ -119,6 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
       roleBadge.style.background = 'rgba(16, 185, 129, 0.15)';
       roleBadge.style.color = '#34d399';
     }
+
+    // Inicializa Módulos (com dados do Supabase)
+    if (typeof Inventory !== 'undefined') await Inventory.init();
+    if (typeof Sales !== 'undefined') await Sales.init();
+    if (user.role === 'admin' && typeof Admin !== 'undefined') await Admin.init();
   }
 });
 

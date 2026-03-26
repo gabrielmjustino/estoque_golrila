@@ -1,48 +1,64 @@
-// Serviço de Autenticação e Sessão
+// Serviço de Autenticação e Sessão integrando com Supabase
 const Auth = {
   currentUser: null,
+  currentProfile: null,
 
-  // Verifica se há alguma sessão ativa persistida no navegador
-  init: () => {
-    const session = Storage.get('nexus_session');
+  // Verifica se há alguma sessão ativa
+  init: async () => {
+    const { data: { session } } = await AppSupabase.auth.getSession();
     if (session) {
-      Auth.currentUser = session;
+      Auth.currentUser = session.user;
+      await Auth.loadProfile(session.user.id);
       return true;
     }
     return false;
+  },
+
+  loadProfile: async (userId) => {
+    const { data, error } = await AppSupabase.from('profiles').select('*').eq('id', userId).single();
+    if (!error && data) {
+      Auth.currentProfile = data;
+    }
   },
 
   // Tenta realizar logon
-  login: (username, password) => {
-    const users = Storage.get('nexus_users', []);
+  login: async (username, password) => {
+    const email = username.includes('@') ? username : `${username}@golrila.com`;
+    const { data, error } = await AppSupabase.auth.signInWithPassword({
+      email,
+      password
+    });
     
-    // Busca usuário.
-    const user = users.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-      // Remover campo senha antes de salvar a sessão temporária
-      const { password: _, ...userSafe } = user;
-      
-      Storage.set('nexus_session', userSafe);
-      Auth.currentUser = userSafe;
-      return true;
+    if (error) {
+      console.error('Erro de login:', error.message);
+      return false;
     }
-    return false;
+    
+    Auth.currentUser = data.user;
+    await Auth.loadProfile(data.user.id);
+    return true;
   },
 
   // Destrói sessão em cache e recarrega
-  logout: () => {
-    Storage.remove('nexus_session');
+  logout: async () => {
+    await AppSupabase.auth.signOut();
     Auth.currentUser = null;
+    Auth.currentProfile = null;
     window.location.reload();
   },
 
   getCurrentUser: () => {
-    return Auth.currentUser;
+    if (!Auth.currentUser || !Auth.currentProfile) return null;
+    return {
+      id: Auth.currentUser.id,
+      username: Auth.currentProfile.username,
+      name: Auth.currentProfile.name,
+      role: Auth.currentProfile.role
+    };
   },
 
   // Checa permissões
   isAdmin: () => {
-    return Auth.currentUser && Auth.currentUser.role === 'admin';
+    return Auth.currentProfile && Auth.currentProfile.role === 'admin';
   }
 };

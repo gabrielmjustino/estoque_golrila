@@ -2,18 +2,19 @@
 const Inventory = {
   products: [],
 
-  init: () => {
-    Inventory.load();
+  init: async () => {
+    await Inventory.load();
     Inventory.render();
     Inventory.setupEventListeners();
   },
 
-  load: () => {
-    Inventory.products = Storage.get('nexus_inventory', []);
-  },
-
-  save: () => {
-    Storage.set('nexus_inventory', Inventory.products);
+  load: async () => {
+    const { data, error } = await AppSupabase.from('inventory').select('*').order('created_at', { ascending: false });
+    if (!error && data) {
+      Inventory.products = data;
+    } else if (error) {
+      console.error('Erro ao carregar estoque do Supabase', error);
+    }
   },
 
   render: () => {
@@ -27,8 +28,8 @@ const Inventory = {
       return;
     }
 
-    // Sort by id descending (newest first)
-    const sortedProducts = [...Inventory.products].reverse();
+    // Sort is handled by Supabase order('created_at', {ascending: false})
+    const sortedProducts = Inventory.products;
 
     sortedProducts.forEach(prod => {
       const tr = document.createElement('tr');
@@ -117,31 +118,34 @@ const Inventory = {
     }
   },
 
-  addProduct: (data) => {
-    // Generate random UUID para identificação futura
-    const newId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    
-    const newProduct = {
-      id: newId,
+  addProduct: async (data) => {
+    const { error } = await AppSupabase.from('inventory').insert([{
       name: data.name,
       photo: data.photo || '',
       qtd: data.qtd,
       size: data.size,
-      color: data.color,
-      createdAt: new Date().toISOString() // Rastreabilidade
-    };
+      color: data.color
+    }]);
 
-    Inventory.products.push(newProduct);
-    Inventory.save();    // Persiste no banco browser
-    Inventory.render();  // Atualiza Table Visual
+    if (!error) {
+      await Inventory.load();    // Sync state
+      Inventory.render();  // Atualiza Table Visual
+    } else {
+      console.error(error);
+      Toast.show('Falha ao inserir via banco Supabase', 'error');
+    }
   },
 
-  deleteProduct: (id) => {
+  deleteProduct: async (id) => {
     if (confirm('Atenção: Tem certeza que deseja excluir esse produto do banco permanentemente?')) {
-      Inventory.products = Inventory.products.filter(p => p.id !== id);
-      Inventory.save();
-      Inventory.render();
-      Toast.show('Produto removido.', 'info');
+      const { error } = await AppSupabase.from('inventory').delete().eq('id', id);
+      if (!error) {
+        await Inventory.load();
+        Inventory.render();
+        Toast.show('Produto removido.', 'info');
+      } else {
+        Toast.show('Erro ao remover do banco.', 'error');
+      }
     }
   },
 
@@ -155,9 +159,4 @@ const Inventory = {
   }
 };
 
-// Start Inventory Logic when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  // O app.js será executado antes. 
-  // O layout html garante que o sub-view ja existe.
-  Inventory.init();
-});
+// Initialization is now managed by app.js (showApp function)
