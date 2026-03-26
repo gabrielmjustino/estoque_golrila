@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolRila Estoques - Premium</title>
+  <link rel="icon" href="LOGO.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- Notificações (Toasts) -->
+  <div id="toast-container"></div>
+
+  <!-- Login View -->
+  <div id="login-view" class="view">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="logo">
+          <img src="logo.png" alt="GolRila Logo" style="width: 300px; height: auto; margin-bottom: 10px;">
+        </div>
+        <p class="login-subtitle">Acesso Restrito ao Sistema Administrativo</p>
+        <form id="login-form">
+          <div class="input-group">
+            <i class='bx bx-user'></i>
+            <input type="text" id="login-username" placeholder="Usuário" required>
+          </div>
+          <div class="input-group">
+            <i class='bx bx-lock-alt'></i>
+            <input type="password" id="login-password" placeholder="Senha" required>
+          </div>
+          <button type="submit" class="btn-primary">Entrar no Sistema</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App View -->
+  <div id="app-view" class="view">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>GolRila Estoques</h2>
+      </div>
+      <div class="user-info">
+        <div class="avatar"><i class='bx bx-user-circle'></i></div>
+        <div class="details">
+          <span id="current-user-name">Usuário</span>
+          <span id="current-user-role" class="role badge">Perfil</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <li><a href="#" data-target="dashboard-view" id="nav-dashboard" class="nav-item" style="display: none;"><i
+              class='bx bx-grid-alt'></i> Painel Admin</a></li>
+        <li><a href="#" data-target="inventory-view" class="nav-item active"><i class='bx bx-package'></i> Estoque
+            (Entradas)</a></li>
+        <li><a href="#" data-target="sold-view" class="nav-item"><i class='bx bx-cart'></i> Saídas (Vendidos)</a></li>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#" id="btn-logout" class="nav-item"><i class='bx bx-log-out'></i> Encerrar Sessão</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <h1 id="page-title">Estoque (Entradas)</h1>
+      </header>
+
+      <div class="content-area">
+        <!-- Sub-views onde os conteúdos reais serão carregados via JS -->
+        <div id="dashboard-view" class="sub-view">
+          <div class="view-header">
+            <div>
+              <h2>Painel Administrativo</h2>
+              <p class="text-muted">Visão geral do sistema e gerenciamento de perfis.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-stats mt-4">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(252, 191, 0, 0.15); color: var(--primary);"><i
+                  class='bx bx-package'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-total-products">0</h3>
+                <p>Itens Diferentes</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i
+                  class='bx bx-cart'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-total-sales">0</h3>
+                <p>Vendas Realizadas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i
+                  class='bx bx-shopping-bag'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-total-items-sold">0</h3>
+                <p>Unidades Vendidas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i
+                  class='bx bx-group'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-total-users">1</h3>
+                <p>Compradores / Equipe</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid mt-4">
+            <div class="card">
+              <h3 style="margin-bottom: 1rem;">Cadastrar Novo Usuário</h3>
+              <form id="form-create-user">
+                <div class="input-group">
+                  <label>Nome Completo</label>
+                  <input type="text" id="new-user-name" required>
+                </div>
+                <div class="input-group">
+                  <label>Nome de Usuário (Login)</label>
+                  <input type="text" id="new-user-username" required>
+                </div>
+                <div class="input-group">
+                  <label>Senha</label>
+                  <input type="password" id="new-user-password" required>
+                </div>
+                <div class="input-group">
+                  <label>Nível de Acesso (Perfil)</label>
+                  <select id="new-user-role" class="form-select" required>
+                    <option value="operator">Operador Padrão</option>
+                    <option value="admin">Administrador Global</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn-primary mt-4" style="width:100%;">Criar Conta</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h3 style="margin-bottom: 1rem;">Membros do Sistema</h3>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Login</th>
+                      <th>Perfil</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-tbody">
+                    <!-- JS populate -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="inventory-view" class="sub-view active">
+          <div class="view-header">
+            <div>
+              <h2>Estoque de Produtos</h2>
+              <p class="text-muted">Gerencie as entradas e disponibilidade dos seus produtos.</p>
+            </div>
+            <button class="btn-primary" id="btn-open-add-modal"><i class='bx bx-plus'></i> Novo Produto</button>
+          </div>
+
+          <div class="card mt-4">
+            <div class="table-responsive">
+              <table class="data-table" id="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Cod.</th>
+                    <th>Foto</th>
+                    <th>Produto</th>
+                    <th>Tamanho</th>
+                    <th>Cor</th>
+                    <th>Qtd.</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-tbody">
+                  <!-- JS populate -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modal Add Product -->
+          <div id="modal-add-product" class="modal">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Adicionar Novo Produto</h3>
+                <span class="close-modal" id="close-add-modal">&times;</span>
+              </div>
+              <form id="form-add-product">
+                <div class="form-grid">
+                  <div class="input-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="add-name" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Foto do Produto (Opcional)</label>
+                    <input type="file" id="add-photo" accept="image/*" style="padding: 0.6rem 1rem;">
+                  </div>
+                  <div class="input-group">
+                    <label>Quantidade</label>
+                    <input type="number" id="add-qtd" min="1" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Tamanho</label>
+                    <input type="text" id="add-size" placeholder="P, M, G, Único..." required>
+                  </div>
+                  <div class="input-group">
+                    <label>Cor</label>
+                    <input type="text" id="add-color" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn-secondary" id="cancel-add-modal">Cancelar</button>
+                  <button type="submit" class="btn-primary">Salvar Produto</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="sold-view" class="sub-view">
+          <div class="view-header">
+            <div>
+              <h2>Histórico de Vendas (Saídas)</h2>
+              <p class="text-muted">Acompanhe todas as mercadorias vendidas e quem as comprou.</p>
+            </div>
+          </div>
+
+          <div class="card mt-4">
+            <div class="table-responsive">
+              <table class="data-table" id="sold-table">
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Produto</th>
+                    <th>Qtd. Vendida</th>
+                    <th>Comprador (Cliente)</th>
+                    <th>Vendedor (Operador)</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="sold-tbody">
+                  <!-- JS populate -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal Sell Product -->
+    <div id="modal-sell-product" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Registrar Venda - <span id="sell-product-name" style="color:var(--primary)"></span></h3>
+          <span class="close-modal" id="close-sell-modal">&times;</span>
+        </div>
+        <form id="form-sell-product">
+          <input type="hidden" id="sell-product-id">
+          <div class="form-grid">
+            <div class="input-group">
+              <label>Nome do Comprador (Cliente)</label>
+              <input type="text" id="sell-buyer" required>
+            </div>
+            <div class="input-group">
+              <label>Nome do Vendedor</label>
+              <input type="text" id="sell-seller" required>
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+              <label>Quantidade a Vender (<span id="sell-product-max"></span>)</label>
+              <input type="number" id="sell-qtd" min="1" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancel-sell-modal">Cancelar</button>
+            <button type="submit" class="btn-primary" style="background:var(--success)">Confirmar Venda</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts: ordem de carregamento importa -->
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/sales.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+
+</html>
