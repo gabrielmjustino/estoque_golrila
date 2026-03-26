@@ -234,6 +234,47 @@
           </div>
         </div>
 
+          <!-- Modal Edit Product -->
+          <div id="modal-edit-product" class="modal">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Editar Produto</h3>
+                <span class="close-modal" id="close-edit-modal">&times;</span>
+              </div>
+              <form id="form-edit-product">
+                <input type="hidden" id="edit-product-id">
+                <div class="form-grid">
+                  <div class="input-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="edit-name" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Nova Foto (Opcional)</label>
+                    <input type="file" id="edit-photo" accept="image/*" style="padding: 0.6rem 1rem;">
+                    <div id="edit-photo-preview" style="margin-top:0.5rem;"></div>
+                  </div>
+                  <div class="input-group">
+                    <label>Quantidade</label>
+                    <input type="number" id="edit-qtd" min="0" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Tamanho</label>
+                    <input type="text" id="edit-size" placeholder="P, M, G, Único..." required>
+                  </div>
+                  <div class="input-group">
+                    <label>Cor</label>
+                    <input type="text" id="edit-color" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn-secondary" id="cancel-edit-modal">Cancelar</button>
+                  <button type="submit" class="btn-primary">Salvar Alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
         <div id="sold-view" class="sub-view">
           <div class="view-header">
             <div>

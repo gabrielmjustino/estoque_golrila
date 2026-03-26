@@ -46,6 +46,7 @@ const Inventory = {
         <td><span class="tag">${prod.color}</span></td>
         <td><span class="${qtdClass}">${prod.qtd} uni.</span></td>
         <td>
+          <button class="btn-icon edit" onclick="Inventory.openEditModal('${prod.id}')" title="Editar Produto"><i class='bx bx-pencil'></i></button>
           <button class="btn-icon sell" onclick="Inventory.openSellModal('${prod.id}')" title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
           <button class="btn-icon delete" onclick="Inventory.deleteProduct('${prod.id}')" title="Remover do Sistema"><i class='bx bx-trash'></i></button>
         </td>
@@ -55,6 +56,7 @@ const Inventory = {
   },
 
   setupEventListeners: () => {
+    // --- Modal: Adicionar Produto ---
     const modalAdd = document.getElementById('modal-add-product');
     const btnOpenAdd = document.getElementById('btn-open-add-modal');
     const btnCloseAdd = document.getElementById('close-add-modal');
@@ -68,7 +70,6 @@ const Inventory = {
       photoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          // Limita fotos a 2MB para preservar o LocalStorage
           if (file.size > 2 * 1024 * 1024) {
             Toast.show('Por favor, escolha uma imagem menor que 2MB.', 'warning');
             photoInput.value = '';
@@ -84,37 +85,120 @@ const Inventory = {
     }
 
     if (btnOpenAdd) btnOpenAdd.addEventListener('click', () => modalAdd.classList.add('active'));
-    
-    const closeModal = () => {
+
+    const closeAddModal = () => {
       modalAdd.classList.remove('active');
-      formAdd.reset(); // Limpa formulario ao fechar
-      currentPhotoBase64 = ''; // Reset base64
+      formAdd.reset();
+      currentPhotoBase64 = '';
     };
 
-    if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeModal);
-    if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeModal);
-    
-    // Fecha clicando no overlay escuro de fundo
-    if (modalAdd) {
-      modalAdd.addEventListener('click', (e) => {
-        if (e.target === modalAdd) closeModal();
-      });
-    }
+    if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
+    if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAddModal);
+    if (modalAdd) modalAdd.addEventListener('click', (e) => { if (e.target === modalAdd) closeAddModal(); });
 
     if (formAdd) {
       formAdd.addEventListener('submit', (e) => {
         e.preventDefault();
-        
         const name = document.getElementById('add-name').value;
         const photo = currentPhotoBase64;
         const qtd = parseInt(document.getElementById('add-qtd').value);
         const size = document.getElementById('add-size').value;
         const color = document.getElementById('add-color').value;
-
         Inventory.addProduct({ name, photo, qtd, size, color });
         Toast.show('Produto adicionado ao estoque!', 'success');
-        closeModal();
+        closeAddModal();
       });
+    }
+
+    // --- Modal: Editar Produto ---
+    const modalEdit = document.getElementById('modal-edit-product');
+    const btnCloseEdit = document.getElementById('close-edit-modal');
+    const btnCancelEdit = document.getElementById('cancel-edit-modal');
+    const formEdit = document.getElementById('form-edit-product');
+    const editPhotoInput = document.getElementById('edit-photo');
+    const editPhotoPreview = document.getElementById('edit-photo-preview');
+
+    let editPhotoBase64 = null; // null = não trocou foto
+
+    if (editPhotoInput) {
+      editPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            Toast.show('Por favor, escolha uma imagem menor que 2MB.', 'warning');
+            editPhotoInput.value = '';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            editPhotoBase64 = ev.target.result;
+            if (editPhotoPreview) editPhotoPreview.innerHTML = `<img src="${editPhotoBase64}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;">`;
+          };
+          reader.readAsDataURL(file);
+        } else {
+          editPhotoBase64 = null;
+        }
+      });
+    }
+
+    const closeEditModal = () => {
+      modalEdit.classList.remove('active');
+      formEdit.reset();
+      editPhotoBase64 = null;
+      if (editPhotoPreview) editPhotoPreview.innerHTML = '';
+    };
+
+    if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
+    if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+    if (modalEdit) modalEdit.addEventListener('click', (e) => { if (e.target === modalEdit) closeEditModal(); });
+
+    if (formEdit) {
+      formEdit.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-product-id').value;
+        const name = document.getElementById('edit-name').value;
+        const qtd = parseInt(document.getElementById('edit-qtd').value);
+        const size = document.getElementById('edit-size').value;
+        const color = document.getElementById('edit-color').value;
+
+        const updateData = { name, qtd, size, color };
+        if (editPhotoBase64 !== null) updateData.photo = editPhotoBase64;
+
+        await Inventory.updateProduct(id, updateData);
+        closeEditModal();
+      });
+    }
+  },
+
+  openEditModal: (id) => {
+    const prod = Inventory.products.find(p => p.id === id);
+    if (!prod) return;
+
+    document.getElementById('edit-product-id').value = prod.id;
+    document.getElementById('edit-name').value = prod.name;
+    document.getElementById('edit-qtd').value = prod.qtd;
+    document.getElementById('edit-size').value = prod.size || '';
+    document.getElementById('edit-color').value = prod.color || '';
+
+    const preview = document.getElementById('edit-photo-preview');
+    if (preview) {
+      preview.innerHTML = prod.photo
+        ? `<img src="${prod.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;" title="Foto atual">`
+        : '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
+    }
+
+    document.getElementById('modal-edit-product').classList.add('active');
+  },
+
+  updateProduct: async (id, data) => {
+    const { error } = await AppSupabase.from('inventory').update(data).eq('id', id);
+    if (!error) {
+      await Inventory.load();
+      Inventory.render();
+      Toast.show('Produto atualizado com sucesso!', 'success');
+    } else {
+      console.error(error);
+      Toast.show('Erro ao atualizar produto.', 'error');
     }
   },
 

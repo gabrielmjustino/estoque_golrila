@@ -469,6 +469,10 @@ body {
   color: var(--success);
 }
 
+.btn-icon.edit:hover {
+  color: #60a5fa;
+}
+
 .btn-icon.delete:hover {
   color: var(--danger);
 }
