@@ -635,8 +635,182 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* Dashboard specific grids */
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+  .dashboard-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .stat-card {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  /* App Main Layout */
+  #app-view {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+  }
+
+  /* Compact Header */
+  .sidebar-header {
+    padding: 0.8rem 1rem;
+    font-size: 1.2rem;
+  }
+  
+  .user-info {
+    padding: 0.8rem 1rem;
+    border-bottom: none;
+  }
+
+  /* Move logout button to top right */
+  .sidebar-footer {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    padding: 0;
+    border: none;
+  }
+  .sidebar-footer .nav-item {
+    font-size: 0;
+    padding: 8px 10px;
+    background: var(--bg-surface-light);
+    border: 1px solid var(--border-color);
+  }
+  .sidebar-footer .nav-item i {
+    font-size: 1.4rem;
+    margin-right: 0;
+    color: var(--danger);
+  }
+
+  /* Bottom Navigation (App-like feel) */
+  .nav-links {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--bg-surface);
+    display: flex;
+    padding: 0;
+    border-top: 1px solid var(--border-color);
+    z-index: 100;
+  }
+  .nav-links li {
+    flex: 1;
+    display: flex;
+  }
+  .nav-item {
+    flex-direction: column;
+    padding: 0.6rem 0;
+    font-size: 0.65rem;
+    width: 100%;
+    border-radius: 0;
+    margin-bottom: 0;
+    gap: 4px;
+    justify-content: center;
+  }
+  .nav-item i {
+    font-size: 1.4rem;
+    margin-right: 0;
+  }
+  .nav-item.active {
+    border-left: none;
+    border-top: 3px solid var(--primary);
+    background: rgba(252, 191, 0, 0.05);
+  }
+
+  /* Main Content Adjustment */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .topbar {
+    padding: 1rem;
+  }
+  .topbar h1 {
+    font-size: 1.2rem;
+  }
+
+  .content-area {
+    padding: 1rem;
+    padding-bottom: 90px; /* space for fixed nav bar */
+  }
+
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .view-header .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Forms and Modals */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid .input-group,
+  .form-grid .input-group:first-child {
+    grid-column: span 1 !important;
+  }
+
+  .modal-content {
+    width: 92%;
+    margin: 1rem auto;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal-footer {
+    flex-direction: column;
+  }
+  .modal-footer button {
+    width: 100%;
+  }
+
+  /* Tables */
+  .card {
+    padding: 1rem;
+  }
+  .data-table th, .data-table td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* Floating Toasts */
+  #toast-container {
+    left: 20px;
+    right: 20px;
+    top: 20px;
+    align-items: center;
+  }
+  .toast {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Login Screen Mobile Setup */
+  .login-card {
+    padding: 2.5rem 1.5rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }
 

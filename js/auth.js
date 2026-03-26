@@ -33,12 +33,12 @@ const Auth = {
       email,
       password
     });
-    
+
     if (error) {
       console.error('Erro de login:', error.message);
       return false;
     }
-    
+
     Auth.currentUser = data.user;
     await Auth.loadProfile(data.user.id);
     return true;

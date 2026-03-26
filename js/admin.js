@@ -41,7 +41,7 @@ const Admin = {
   renderStats: async () => {
     // Calculo de Meticas a partir do Supabase
     const { count: inventoryCount } = await AppSupabase.from('inventory').select('*', { count: 'exact', head: true });
-    
+
     const { data: salesData } = await AppSupabase.from('sales').select('qtd_sold');
     const totalSales = salesData ? salesData.length : 0;
     const totalItemsSold = salesData ? salesData.reduce((sum, sale) => sum + parseInt(sale.qtd_sold), 0) : 0;
@@ -109,7 +109,7 @@ const Admin = {
         });
 
         const email = username.includes('@') ? username : `${username}@golrila.com`;
-        
+
         const { data, error } = await adminSignupClient.auth.signUp({
           email,
           password,
