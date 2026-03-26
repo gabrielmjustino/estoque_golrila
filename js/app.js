@@ -44,6 +44,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  const btnLogoutSettings = document.getElementById('btn-logout-settings');
+  if (btnLogoutSettings) {
+    btnLogoutSettings.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await Auth.logout();
+    });
+  }
+
   // 4.5. Lidar com Mudança de Senha
   const formChangePassword = document.getElementById('form-change-password');
   if (formChangePassword) {

@@ -266,11 +266,13 @@
         <div id="settings-view" class="sub-view">
           <div class="view-header">
             <div>
-              <h2>Configurações da Conta</h2>
-              <p class="text-muted">Altere sua senha de acesso ao sistema.</p>
+              <h2>Configurações do Sistema</h2>
+              <p class="text-muted">Gerencie sua conta e sessão atual.</p>
             </div>
           </div>
+          
           <div class="card mt-4" style="max-width: 500px;">
+            <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Alterar Senha</h3>
             <form id="form-change-password">
               <div class="input-group">
                 <label>Nova Senha</label>
@@ -282,6 +284,14 @@
               </div>
               <button type="submit" class="btn-primary mt-4" style="width:100%;">Atualizar Senha</button>
             </form>
+          </div>
+
+          <div class="card mt-4" style="max-width: 500px; border-color: rgba(239, 68, 68, 0.3);">
+            <h3 style="margin-bottom: 1rem; color: var(--danger); font-size: 1.1rem;">Sessão Ativa</h3>
+            <p class="text-muted" style="margin-bottom: 1.5rem;">Ao encerrar a sessão, você precisará fazer login novamente para acessar o estoque e relatórios.</p>
+            <button type="button" id="btn-logout-settings" class="btn-primary" style="width:100%; background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3);">
+              <i class='bx bx-log-out'></i> Encerrar Sessão
+            </button>
           </div>
         </div>
       </div>

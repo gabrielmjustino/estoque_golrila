@@ -673,24 +673,19 @@ body {
     border-bottom: none;
   }
 
-  /* Move logout button to top right */
+  /* Hide logout button on sidebar for mobile, moved to Settings */
   .sidebar-footer {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    padding: 0;
-    border: none;
+    display: none;
   }
-  .sidebar-footer .nav-item {
-    font-size: 0;
-    padding: 8px 10px;
-    background: var(--bg-surface-light);
-    border: 1px solid var(--border-color);
+
+  .user-info .details {
+    max-width: calc(100vw - 100px); /* prevent overflow */
   }
-  .sidebar-footer .nav-item i {
-    font-size: 1.4rem;
-    margin-right: 0;
-    color: var(--danger);
+  
+  .user-info .details span {
+    white-space: normal;
+    word-wrap: break-word;
+    font-size: 0.9rem;
   }
 
   /* Bottom Navigation (App-like feel) */
@@ -779,9 +774,18 @@ body {
     width: 100%;
   }
 
-  /* Tables */
+  /* Tables and Cards */
   .card {
     padding: 1rem;
+    width: 100%;
+    overflow: hidden; /* Avoid overflowing parent */
+  }
+  .table-responsive {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
   .data-table th, .data-table td {
     padding: 0.8rem 0.5rem;
