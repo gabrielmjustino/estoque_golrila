@@ -46,6 +46,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 4.5. Lidar com Mudança de Senha
+  const formChangePassword = document.getElementById('form-change-password');
+  if (formChangePassword) {
+    formChangePassword.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newPass = document.getElementById('new-password-input').value;
+      const confirmPass = document.getElementById('confirm-password-input').value;
+
+      if (newPass !== confirmPass) {
+        Toast.show('As senhas não coincidem. Tente novamente.', 'error');
+        return;
+      }
+
+      const currentUser = Auth.getCurrentUser();
+      const users = Storage.get('nexus_users', []);
+      const userIndex = users.findIndex(u => u.username === currentUser.username);
+
+      if (userIndex !== -1) {
+        users[userIndex].password = newPass;
+        Storage.set('nexus_users', users);
+        Toast.show('Senha atualizada com sucesso!', 'success');
+        formChangePassword.reset();
+      } else {
+        Toast.show('Erro ao localizar usuário no sistema.', 'error');
+      }
+    });
+  }
+
   // 5. Setup do Router (Menu lateral)
   const navItems = document.querySelectorAll('.nav-links .nav-item');
   navItems.forEach(item => {

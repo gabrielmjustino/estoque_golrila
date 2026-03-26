@@ -42,22 +42,6 @@ const Storage = {
       }];
       Storage.set('nexus_users', defaultUsers);
       console.log('Setup Inicial: Usuário administrador principal criado com sucesso!');
-    } else {
-      // Atualizar as credenciais do admin caso já existam no LocalStorage
-      let updated = false;
-      users.forEach(u => {
-        if (u.role === 'admin' && (u.username === 'admin' || u.username === 'Justino')) {
-          if (u.username !== 'Justino' || u.password !== '1145Biel') {
-            u.username = 'Justino';
-            u.password = '1145Biel';
-            updated = true;
-          }
-        }
-      });
-      if (updated) {
-        Storage.set('nexus_users', users);
-        console.log('Credenciais do admin foram atualizadas para Justino.');
-      }
     }
 
     // 2. Inicializar arrays de estoque se não existirem

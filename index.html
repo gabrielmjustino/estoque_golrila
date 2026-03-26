@@ -23,7 +23,7 @@
     <div class="login-container">
       <div class="login-card">
         <div class="logo">
-          <img src="logo.png" alt="GolRila Logo" style="width: 300px; height: auto; margin-bottom: 10px;">
+          <img src="LOGO.png" alt="GolRila Logo" style="width: 300px; height: auto; margin-bottom: 10px;">
         </div>
         <p class="login-subtitle">Acesso Restrito ao Sistema Administrativo</p>
         <form id="login-form">
@@ -60,6 +60,7 @@
         <li><a href="#" data-target="inventory-view" class="nav-item active"><i class='bx bx-package'></i> Estoque
             (Entradas)</a></li>
         <li><a href="#" data-target="sold-view" class="nav-item"><i class='bx bx-cart'></i> Saídas (Vendidos)</a></li>
+        <li><a href="#" data-target="settings-view" class="nav-item"><i class='bx bx-cog'></i> Configurações</a></li>
       </nav>
       <div class="sidebar-footer">
         <a href="#" id="btn-logout" class="nav-item"><i class='bx bx-log-out'></i> Encerrar Sessão</a>
@@ -259,6 +260,28 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <div id="settings-view" class="sub-view">
+          <div class="view-header">
+            <div>
+              <h2>Configurações da Conta</h2>
+              <p class="text-muted">Altere sua senha de acesso ao sistema.</p>
+            </div>
+          </div>
+          <div class="card mt-4" style="max-width: 500px;">
+            <form id="form-change-password">
+              <div class="input-group">
+                <label>Nova Senha</label>
+                <input type="password" id="new-password-input" required minlength="4">
+              </div>
+              <div class="input-group">
+                <label>Confirmar Nova Senha</label>
+                <input type="password" id="confirm-password-input" required minlength="4">
+              </div>
+              <button type="submit" class="btn-primary mt-4" style="width:100%;">Atualizar Senha</button>
+            </form>
           </div>
         </div>
       </div>
