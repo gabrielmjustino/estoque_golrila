@@ -379,6 +379,7 @@
                     <th>Descrição</th>
                     <th>Valor (R$)</th>
                     <th>Registrado por</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody id="transactions-tbody">
@@ -398,10 +399,18 @@
               <form id="form-add-transaction">
                 <div class="form-grid">
                   <div class="input-group" style="grid-column: span 2;">
+                    <label>Tipo de Transação</label>
+                    <select id="add-transaction-type" class="form-select" required
+                      style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 0.6rem 1rem;">
+                      <option value="in">Entrada (+)</option>
+                      <option value="out">Saída (-)</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
                     <label>Valor (R$)</label>
                     <input type="number" step="0.01" id="add-transaction-amount" placeholder="0.00" required>
                   </div>
-                  <div class="input-group" style="grid-column: span 2;">
+                  <div class="input-group">
                     <label>Data</label>
                     <input type="date" id="add-transaction-date" required>
                   </div>
@@ -480,6 +489,10 @@
             <div class="input-group" style="grid-column: span 2;">
               <label>Quantidade a Vender (<span id="sell-product-max"></span>)</label>
               <input type="number" id="sell-qtd" min="1" required>
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+              <label>Valor Total da Venda (R$)</label>
+              <input type="number" step="0.01" id="sell-total-price" placeholder="Ex: 150.00" required>
             </div>
             <div class="input-group" style="grid-column: span 2;">
               <label>Forma de Pagamento</label>

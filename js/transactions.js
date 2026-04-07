@@ -40,14 +40,17 @@ const Transactions = {
             formAdd.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const amount = parseFloat(document.getElementById('add-transaction-amount').value);
+                const rawAmount = parseFloat(document.getElementById('add-transaction-amount').value);
+                const transType = document.getElementById('add-transaction-type') ? document.getElementById('add-transaction-type').value : 'in';
                 const dateStr = document.getElementById('add-transaction-date').value;
                 const description = document.getElementById('add-transaction-description').value;
 
-                if (isNaN(amount)) {
+                if (isNaN(rawAmount)) {
                     if (typeof Toast !== 'undefined') Toast.show('Valor inválido.', 'warning');
                     return;
                 }
+
+                const amount = transType === 'out' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
 
                 // Get current user name
                 const currentUser = Auth.getCurrentUser();
@@ -298,8 +301,24 @@ const Transactions = {
         <td>${t.description}</td>
         <td style="color: ${valColor}; font-weight: 600;">${t.amount < 0 ? '-' : ''}${formattedAmount}</td>
         <td><span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);"><i class='bx bx-user'></i> ${t.user_name}</span></td>
+        <td>
+          <button class="btn-icon delete" onclick="Transactions.deleteTransaction('${t.id}')" title="Excluir Transação"><i class='bx bx-trash'></i></button>
+        </td>
       `;
             tbody.appendChild(tr);
         });
+    },
+
+    deleteTransaction: async (id) => {
+        if (confirm('Deseja realmente excluir esta transação?')) {
+            const { error } = await AppSupabase.from('transactions').delete().eq('id', id);
+            if (!error) {
+                if (typeof Toast !== 'undefined') Toast.show('Transação excluída.', 'info');
+                await Transactions.loadTransactions();
+            } else {
+                console.error("Erro ao excluir", error);
+                if (typeof Toast !== 'undefined') Toast.show('Erro ao excluir.', 'error');
+            }
+        }
     }
 };

@@ -45,11 +45,11 @@ const Sales = {
         }
       }
 
-      const productName   = sale.product_name   || '—';
-      const qtdSold       = sale.qtd_sold        ?? '?';
-      const paymentMethod = sale.payment_method  || 'Dinheiro';
-      const buyerName     = sale.buyer_name      || '—';
-      const sellerName    = sale.seller_name     || '—';
+      const productName = sale.product_name || '—';
+      const qtdSold = sale.qtd_sold ?? '?';
+      const paymentMethod = sale.payment_method || 'Dinheiro';
+      const buyerName = sale.buyer_name || '—';
+      const sellerName = sale.seller_name || '—';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -76,11 +76,11 @@ const Sales = {
     const formSell = document.getElementById('form-sell-product');
 
     const closeModal = () => {
-      if(modalSell) {
+      if (modalSell) {
         modalSell.classList.remove('active');
         document.getElementById('sell-product-id').value = '';
       }
-      if(formSell) formSell.reset();
+      if (formSell) formSell.reset();
     };
 
     if (btnCloseSell) btnCloseSell.addEventListener('click', closeModal);
@@ -97,13 +97,14 @@ const Sales = {
       formSell.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        const productId     = document.getElementById('sell-product-id').value;
-        const buyerName     = document.getElementById('sell-buyer').value;
-        const sellerName    = document.getElementById('sell-seller').value;
-        const qtdSold       = parseInt(document.getElementById('sell-qtd').value);
+        const productId = document.getElementById('sell-product-id').value;
+        const buyerName = document.getElementById('sell-buyer').value;
+        const sellerName = document.getElementById('sell-seller').value;
+        const qtdSold = parseInt(document.getElementById('sell-qtd').value);
         const paymentMethod = document.getElementById('sell-payment-method').value;
+        const totalPrice = parseFloat(document.getElementById('sell-total-price').value);
 
-        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod);
+        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice);
       });
     }
   },
@@ -122,15 +123,16 @@ const Sales = {
     }
 
     // Populate Modal Data
-    document.getElementById('sell-product-id').value   = product.id;
+    document.getElementById('sell-product-id').value = product.id;
     document.getElementById('sell-product-name').textContent = product.name;
-    document.getElementById('sell-product-max').textContent  = `Máx disponível: ${product.qtd}`;
-    document.getElementById('sell-qtd').max   = product.qtd;
+    document.getElementById('sell-product-max').textContent = `Máx disponível: ${product.qtd}`;
+    document.getElementById('sell-qtd').max = product.qtd;
     document.getElementById('sell-qtd').value = 1; // Default to 1
+    document.getElementById('sell-total-price').value = '';
 
     // Auto fill seller input if possible
     const currentSession = Auth.getCurrentUser();
-    if(currentSession) {
+    if (currentSession) {
       document.getElementById('sell-seller').value = currentSession.name;
     }
 
@@ -184,7 +186,7 @@ const Sales = {
     }
   },
 
-  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod) => {
+  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Desculpe, ocorreu um erro na leitura do inventário.', 'error');
@@ -196,20 +198,33 @@ const Sales = {
       return;
     }
 
+    if (isNaN(totalPrice) || totalPrice <= 0) {
+      Toast.show('Por favor, defina um valor total válido para a venda.', 'warning');
+      return;
+    }
+
     // Capture product name BEFORE any async reload (avoids stale index bug)
     const productName = Inventory.products[pIndex].name;
-    const newQtd      = Inventory.products[pIndex].qtd - qtdSold;
+    const newQtd = Inventory.products[pIndex].qtd - qtdSold;
 
-    // Run inventory update + sale insert in parallel
-    const [invResult, saleResult] = await Promise.all([
+    const tDate = new Date().toISOString().split('T')[0];
+
+    // Run inventory update + sale insert in parallel + transaction insert
+    const [invResult, saleResult, transResult] = await Promise.all([
       AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
       AppSupabase.from('sales').insert([{
-        product_id:     productId,
-        product_name:   productName,
-        buyer_name:     buyerName,
-        seller_name:    sellerName,
-        qtd_sold:       qtdSold,
+        product_id: productId,
+        product_name: productName,
+        buyer_name: buyerName,
+        seller_name: sellerName,
+        qtd_sold: qtdSold,
         payment_method: paymentMethod
+      }]),
+      AppSupabase.from('transactions').insert([{
+        amount: totalPrice,
+        date: tDate,
+        description: `Venda do Produto: ${productName} (${qtdSold}x) a ${buyerName}`,
+        user_name: sellerName
       }])
     ]);
 
@@ -221,6 +236,11 @@ const Sales = {
     if (saleResult.error) {
       Toast.show('Venda não autorizada pelo banco de dados.', 'error');
       return;
+    }
+
+    if (transResult.error) {
+      Toast.show('Venda foi feita, mas não foi possível adicionar a transação.', 'warning');
+      console.error(transResult.error);
     }
 
     // Optimistically update local state
