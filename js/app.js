@@ -94,9 +94,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Atualiza Titulo da Pagina Header
         document.getElementById('page-title').textContent = item.textContent.trim();
+
+        // Refresh Data Context whenever a tab is clicked
+        if (targetId === 'transactions-view' && typeof Transactions !== 'undefined') Transactions.loadTransactions();
+        if (targetId === 'inventory-view' && typeof Inventory !== 'undefined') {
+          Inventory.load().then(() => Inventory.render());
+        }
+        if (targetId === 'sold-view' && typeof Sales !== 'undefined') {
+          Sales.load().then(() => Sales.render());
+        }
       }
     });
   });
+
+  // ========== SUPABASE REALTIME SYNC ==========
+  try {
+    AppSupabase.channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, (payload) => {
+        if (payload.table === 'transactions' && typeof Transactions !== 'undefined') {
+          Transactions.loadTransactions();
+        }
+        if (payload.table === 'inventory' && typeof Inventory !== 'undefined') {
+          Inventory.load().then(() => Inventory.render());
+        }
+        if (payload.table === 'sales' && typeof Sales !== 'undefined') {
+          Sales.load().then(() => Sales.render());
+        }
+      })
+      .subscribe();
+  } catch (err) {
+    console.error("Realtime sync setup problem", err);
+  }
 
   // Funcao Privada para liberar visao ao App principal
   async function showApp() {
