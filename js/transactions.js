@@ -296,20 +296,28 @@ const Transactions = {
             const valColor = t.amount < 0 ? 'var(--danger)' : 'var(--success)';
             const formattedAmount = Math.abs(t.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+            const deleteAction = t.sale_id
+                ? `<button class="btn-icon" style="opacity: 0.3; cursor: not-allowed;" title="Transação gerada por venda (para excluir, cancele a venda na aba Saídas)"><i class='bx bx-trash'></i></button>`
+                : `<button class="btn-icon delete" onclick="Transactions.deleteTransaction('${t.id}')" title="Excluir Transação"><i class='bx bx-trash'></i></button>`;
+
             tr.innerHTML = `
         <td>${ptDate}</td>
         <td>${t.description}</td>
         <td style="color: ${valColor}; font-weight: 600;">${t.amount < 0 ? '-' : ''}${formattedAmount}</td>
         <td><span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);"><i class='bx bx-user'></i> ${t.user_name}</span></td>
-        <td>
-          <button class="btn-icon delete" onclick="Transactions.deleteTransaction('${t.id}')" title="Excluir Transação"><i class='bx bx-trash'></i></button>
-        </td>
+        <td>${deleteAction}</td>
       `;
             tbody.appendChild(tr);
         });
     },
 
     deleteTransaction: async (id) => {
+        const trans = Transactions.transactionsList.find(tx => tx.id === id);
+        if (trans && trans.sale_id) {
+            if (typeof Toast !== 'undefined') Toast.show('Esta transação é vinculada a uma venda. Cancele a venda na aba Saídas.', 'warning');
+            return;
+        }
+
         if (confirm('Deseja realmente excluir esta transação?')) {
             const { error } = await AppSupabase.from('transactions').delete().eq('id', id);
             if (!error) {
