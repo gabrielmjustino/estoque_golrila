@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const initTasks = [];
     if (typeof Inventory !== 'undefined') initTasks.push(Inventory.init());
     if (typeof Sales !== 'undefined') initTasks.push(Sales.init());
+    if (typeof Transactions !== 'undefined') initTasks.push(Transactions.init());
     await Promise.all(initTasks);
 
     // Admin depende dos dados já carregados
