@@ -320,6 +320,56 @@
               Transação</button>
           </div>
 
+          <div class="dashboard-stats mt-4">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i
+                  class='bx bx-trending-up'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-trans-in">R$ 0,00</h3>
+                <p>Entradas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i
+                  class='bx bx-trending-down'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-trans-out">R$ 0,00</h3>
+                <p>Saídas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--info);"><i
+                  class='bx bx-dollar-circle'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-trans-revenue">R$ 0,00</h3>
+                <p>Faturamento</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(252, 191, 0, 0.15); color: var(--primary);"><i
+                  class='bx bx-award'></i></div>
+              <div class="stat-details">
+                <h3 id="stat-trans-profit">R$ 0,00</h3>
+                <p>Lucro Real</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-4" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+              <h3 style="font-size: 1.1rem; color: var(--text-main);">Evolução Financeira</h3>
+              <select id="transactions-period-select" class="form-select"
+                style="width: auto; background: var(--bg-surface-light);">
+                <option value="all">Todo o Período</option>
+                <option value="30days" selected>Últimos 30 Dias</option>
+                <option value="thismonth">Este Mês</option>
+              </select>
+            </div>
+            <div style="position: relative; height: 300px; width: 100%;">
+              <canvas id="transactions-chart"></canvas>
+            </div>
+          </div>
+
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="transactions-table">
@@ -453,6 +503,7 @@
 
   <!-- Scripts: ordem de carregamento importa -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>

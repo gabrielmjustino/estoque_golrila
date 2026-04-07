@@ -1,5 +1,6 @@
 const Transactions = {
     transactionsList: [],
+    chartInstance: null,
 
     init: async () => {
         Transactions.setupEventListeners();
@@ -13,16 +14,25 @@ const Transactions = {
         const closeAdd = document.getElementById('close-add-transaction-modal');
         const cancelAdd = document.getElementById('cancel-add-transaction-modal');
 
+        // Filter dropdown
+        const periodSelect = document.getElementById('transactions-period-select');
+        if (periodSelect) {
+            periodSelect.addEventListener('change', () => {
+                Transactions.renderDashboard();
+                Transactions.renderTransactions();
+            });
+        }
+
         // Fechar se clicar fora do modal
         window.addEventListener('click', (e) => {
             if (e.target === modalAdd) {
-                modalAdd.style.display = 'none';
+                modalAdd.classList.remove('active');
             }
         });
 
-        if (btnOpenAdd) btnOpenAdd.addEventListener('click', () => modalAdd.style.display = 'flex');
-        if (closeAdd) closeAdd.addEventListener('click', () => modalAdd.style.display = 'none');
-        if (cancelAdd) cancelAdd.addEventListener('click', () => modalAdd.style.display = 'none');
+        if (btnOpenAdd) btnOpenAdd.addEventListener('click', () => modalAdd.classList.add('active'));
+        if (closeAdd) closeAdd.addEventListener('click', () => modalAdd.classList.remove('active'));
+        if (cancelAdd) cancelAdd.addEventListener('click', () => modalAdd.classList.remove('active'));
 
         // Handle form submit
         const formAdd = document.getElementById('form-add-transaction');
@@ -63,7 +73,7 @@ const Transactions = {
                     if (typeof Toast !== 'undefined') Toast.show('Erro ao salvar transação no banco.', 'error');
                 } else {
                     if (typeof Toast !== 'undefined') Toast.show('Transação salva com sucesso!', 'success');
-                    modalAdd.style.display = 'none';
+                    modalAdd.classList.remove('active');
                     formAdd.reset();
                     await Transactions.loadTransactions();
                 }
@@ -85,7 +95,176 @@ const Transactions = {
         }
 
         Transactions.transactionsList = data || [];
+        Transactions.renderDashboard();
         Transactions.renderTransactions();
+    },
+
+    filterByPeriod: (list) => {
+        const periodSelect = document.getElementById('transactions-period-select');
+        if (!periodSelect) return list;
+        const period = periodSelect.value;
+
+        if (period === 'all') return list;
+
+        const now = new Date();
+        // Consider current timezone manually to avoid offset issues
+        now.setHours(0, 0, 0, 0);
+
+        return list.filter(t => {
+            const parts = t.date.split('-');
+            const tDate = new Date(parts[0], parts[1] - 1, parts[2]); // YYYY-MM-DD
+
+            if (period === '30days') {
+                const diffTime = Math.abs(now - tDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 30;
+            }
+            if (period === 'thismonth') {
+                return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+            }
+            return true;
+        });
+    },
+
+    renderDashboard: () => {
+        const filtered = Transactions.filterByPeriod(Transactions.transactionsList);
+
+        let totalIn = 0;
+        let totalOut = 0;
+
+        filtered.forEach(t => {
+            if (t.amount > 0) totalIn += parseFloat(t.amount);
+            if (t.amount < 0) totalOut += parseFloat(t.amount);
+        });
+
+        const faturamento = totalIn;
+        const lucro = totalIn + totalOut; // out is already negative
+
+        const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        document.getElementById('stat-trans-in').textContent = formatBRL(totalIn);
+        document.getElementById('stat-trans-out').textContent = formatBRL(totalOut);
+        document.getElementById('stat-trans-revenue').textContent = formatBRL(faturamento);
+
+        const elProfit = document.getElementById('stat-trans-profit');
+        elProfit.textContent = (lucro < 0 ? '-' : '') + formatBRL(lucro);
+        if (lucro < 0) {
+            elProfit.parentElement.previousElementSibling.style.color = "var(--danger)";
+            elProfit.style.color = "var(--danger)";
+        } else {
+            elProfit.parentElement.previousElementSibling.style.color = "var(--primary)";
+            elProfit.style.color = "var(--text-main)";
+        }
+
+        Transactions.renderChart(filtered);
+    },
+
+    renderChart: (filtered) => {
+        const ctx = document.getElementById('transactions-chart');
+        if (!ctx) return;
+
+        if (Transactions.chartInstance) {
+            Transactions.chartInstance.destroy();
+        }
+
+        if (filtered.length === 0) {
+            return;
+        }
+
+        // Group by Date
+        // Sort array by ascending datetime for the chart
+        const ascList = [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const groupedObj = {};
+        ascList.forEach(t => {
+            let ptDate = t.date;
+            if (t.date.includes('-')) {
+                const [year, month, day] = t.date.split('-');
+                ptDate = `${day}/${month}`; // short format for chart
+            }
+            if (!groupedObj[ptDate]) groupedObj[ptDate] = { in: 0, out: 0, total: 0 };
+
+            const v = parseFloat(t.amount);
+            if (v > 0) groupedObj[ptDate].in += v;
+            if (v < 0) groupedObj[ptDate].out += (-v); // make positive for bar
+            groupedObj[ptDate].total += v; // raw for line line
+        });
+
+        const labels = Object.keys(groupedObj);
+        const dataIn = labels.map(l => groupedObj[l].in);
+        const dataOut = labels.map(l => groupedObj[l].out);
+        const dataTotal = labels.map(l => groupedObj[l].total);
+
+        Transactions.chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Entradas',
+                        data: dataIn,
+                        backgroundColor: '#10b981', // success
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Saídas',
+                        data: dataOut,
+                        backgroundColor: '#ef4444', // danger
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Saldo do Dia',
+                        data: dataTotal,
+                        type: 'line',
+                        borderColor: '#3b82f6', // info
+                        backgroundColor: '#3b82f6',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#9ca3af', font: { family: 'Inter' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const val = context.parsed.y !== null ? context.parsed.y : 0;
+                                label += val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: function (value) {
+                                return 'R$ ' + value;
+                            }
+                        },
+                        grid: { color: '#2e323e' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
     },
 
     renderTransactions: () => {
@@ -94,12 +273,14 @@ const Transactions = {
 
         tbody.innerHTML = '';
 
-        if (Transactions.transactionsList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888; padding: 2rem;">Nenhuma transação registrada.</td></tr>';
+        const filtered = Transactions.filterByPeriod(Transactions.transactionsList);
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888; padding: 2rem;">Nenhuma transação no período selecionado.</td></tr>';
             return;
         }
 
-        Transactions.transactionsList.forEach(t => {
+        filtered.forEach(t => {
             const tr = document.createElement('tr');
 
             // format date safe parsing
