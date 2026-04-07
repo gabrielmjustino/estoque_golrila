@@ -64,7 +64,7 @@ const Transactions = {
                 const { data, error } = await AppSupabase
                     .from('transactions')
                     .insert([
-                        { amount, date: dateStr, description, user_name: userName }
+                        { amount, date: dateStr, description, user_name: userName, trans_type: transType }
                     ])
                     .select();
 
@@ -134,14 +134,22 @@ const Transactions = {
 
         let totalIn = 0;
         let totalOut = 0;
+        let totalInvest = 0;
 
         filtered.forEach(t => {
-            if (t.amount > 0) totalIn += parseFloat(t.amount);
-            if (t.amount < 0) totalOut += parseFloat(t.amount);
+            if (t.trans_type === 'invest') {
+                totalInvest += parseFloat(t.amount);
+            } else if (t.amount > 0) {
+                totalIn += parseFloat(t.amount);
+            }
+            if (t.amount < 0) {
+                totalOut += parseFloat(t.amount);
+            }
         });
 
         const faturamento = totalIn;
         const lucro = totalIn + totalOut; // out is already negative
+        const investReal = totalInvest + totalOut;
 
         const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -150,13 +158,27 @@ const Transactions = {
         document.getElementById('stat-trans-revenue').textContent = formatBRL(faturamento);
 
         const elProfit = document.getElementById('stat-trans-profit');
-        elProfit.textContent = (lucro < 0 ? '-' : '') + formatBRL(lucro);
-        if (lucro < 0) {
-            elProfit.parentElement.previousElementSibling.style.color = "var(--danger)";
-            elProfit.style.color = "var(--danger)";
-        } else {
-            elProfit.parentElement.previousElementSibling.style.color = "var(--primary)";
-            elProfit.style.color = "var(--text-main)";
+        if (elProfit) {
+            elProfit.textContent = (lucro < 0 ? '-' : '') + formatBRL(lucro);
+            if (lucro < 0) {
+                elProfit.parentElement.previousElementSibling.style.color = "var(--danger)";
+                elProfit.style.color = "var(--danger)";
+            } else {
+                elProfit.parentElement.previousElementSibling.style.color = "var(--primary)";
+                elProfit.style.color = "var(--text-main)";
+            }
+        }
+
+        const elInvest = document.getElementById('stat-trans-invest');
+        if (elInvest) {
+            elInvest.textContent = (investReal < 0 ? '-' : '') + formatBRL(investReal);
+            if (investReal < 0) {
+                elInvest.parentElement.previousElementSibling.style.color = "var(--danger)";
+                elInvest.style.color = "var(--danger)";
+            } else {
+                elInvest.parentElement.previousElementSibling.style.color = "#8b5cf6";
+                elInvest.style.color = "var(--text-main)";
+            }
         }
 
         Transactions.renderChart(filtered);
@@ -188,9 +210,12 @@ const Transactions = {
             if (!groupedObj[ptDate]) groupedObj[ptDate] = { in: 0, out: 0, total: 0 };
 
             const v = parseFloat(t.amount);
-            if (v > 0) groupedObj[ptDate].in += v;
+            if (v > 0 && t.trans_type !== 'invest') groupedObj[ptDate].in += v;
             if (v < 0) groupedObj[ptDate].out += (-v); // make positive for bar
-            groupedObj[ptDate].total += v; // raw for line line
+
+            if (t.trans_type !== 'invest') {
+                groupedObj[ptDate].total += v; // raw for line excluding investments to track operational balance
+            }
         });
 
         const labels = Object.keys(groupedObj);
