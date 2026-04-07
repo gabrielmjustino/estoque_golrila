@@ -12,7 +12,7 @@ const Inventory = {
   load: async () => {
     const { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, created_at')
+      .select('id, name, qtd, size, color, photo, created_at')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -39,9 +39,13 @@ const Inventory = {
       const tr = document.createElement('tr');
       const qtdClass = prod.qtd <= 5 ? 'tag qtd danger' : 'tag qtd';
 
+      const photoHtml = prod.photo
+        ? `<img src="${prod.photo}" alt="${prod.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);">`
+        : `<div style="width: 40px; height: 40px; background: var(--bg-surface-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><i class='bx bx-image-alt'></i></div>`;
+
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-family: monospace;">#${prod.id.slice(0, 6).toUpperCase()}</td>
-        <td><div style="width: 40px; height: 40px; background: var(--bg-surface-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><i class='bx bx-image-alt'></i></div></td>
+        <td>${photoHtml}</td>
         <td style="font-weight: 500;">${prod.name}</td>
         <td><span class="tag">${prod.size || '—'}</span></td>
         <td><span class="tag">${prod.color || '—'}</span></td>
