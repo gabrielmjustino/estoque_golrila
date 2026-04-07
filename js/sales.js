@@ -152,8 +152,11 @@ const Sales = {
 
     const pIndex = Inventory.products.findIndex(p => p.id === sale.product_id);
 
-    // Run inventory restore + sale delete in parallel
-    const ops = [AppSupabase.from('sales').delete().eq('id', saleId)];
+    // Run inventory restore + sale delete + trans delete in parallel
+    const ops = [
+      AppSupabase.from('sales').delete().eq('id', saleId),
+      AppSupabase.from('transactions').delete().eq('sale_id', saleId)
+    ];
 
     if (pIndex !== -1) {
       const newQtd = Inventory.products[pIndex].qtd + sale.qtd_sold;
@@ -169,6 +172,10 @@ const Sales = {
       // Optimistically update local state (no extra DB round-trips)
       Sales.history = Sales.history.filter(s => s.id !== saleId);
       Sales.render();
+
+      if (typeof Transactions !== 'undefined') {
+        Transactions.loadTransactions(); // refresh dashboard
+      }
 
       if (pIndex !== -1) {
         Inventory.products[pIndex].qtd += sale.qtd_sold;
@@ -209,8 +216,8 @@ const Sales = {
 
     const tDate = new Date().toISOString().split('T')[0];
 
-    // Run inventory update + sale insert in parallel + transaction insert
-    const [invResult, saleResult, transResult] = await Promise.all([
+    // Run inventory update + sale insert in parallel
+    const [invResult, saleResult] = await Promise.all([
       AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
       AppSupabase.from('sales').insert([{
         product_id: productId,
@@ -219,13 +226,7 @@ const Sales = {
         seller_name: sellerName,
         qtd_sold: qtdSold,
         payment_method: paymentMethod
-      }]),
-      AppSupabase.from('transactions').insert([{
-        amount: totalPrice,
-        date: tDate,
-        description: `Venda do Produto: ${productName} (${qtdSold}x) a ${buyerName}`,
-        user_name: sellerName
-      }])
+      }]).select()
     ]);
 
     if (invResult.error) {
@@ -238,9 +239,21 @@ const Sales = {
       return;
     }
 
-    if (transResult.error) {
-      Toast.show('Venda foi feita, mas não foi possível adicionar a transação.', 'warning');
-      console.error(transResult.error);
+    const insertedSale = saleResult.data ? saleResult.data[0] : null;
+
+    if (insertedSale) {
+      const transResult = await AppSupabase.from('transactions').insert([{
+        amount: totalPrice,
+        date: tDate,
+        description: `Venda do Produto: ${productName} (${qtdSold}x) a ${buyerName}`,
+        user_name: sellerName,
+        sale_id: insertedSale.id
+      }]);
+
+      if (transResult.error) {
+        Toast.show('Venda foi feita, mas não foi possível adicionar a transação.', 'warning');
+        console.error(transResult.error);
+      }
     }
 
     // Optimistically update local state
