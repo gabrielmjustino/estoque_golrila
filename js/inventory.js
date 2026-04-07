@@ -60,11 +60,11 @@ const Inventory = {
 
   setupEventListeners: () => {
     // --- Modal: Adicionar Produto ---
-    const modalAdd   = document.getElementById('modal-add-product');
+    const modalAdd = document.getElementById('modal-add-product');
     const btnOpenAdd = document.getElementById('btn-open-add-modal');
-    const btnCloseAdd   = document.getElementById('close-add-modal');
-    const btnCancelAdd  = document.getElementById('cancel-add-modal');
-    const formAdd    = document.getElementById('form-add-product');
+    const btnCloseAdd = document.getElementById('close-add-modal');
+    const btnCancelAdd = document.getElementById('cancel-add-modal');
+    const formAdd = document.getElementById('form-add-product');
     const photoInput = document.getElementById('add-photo');
 
     let currentPhotoBase64 = '';
@@ -95,17 +95,17 @@ const Inventory = {
       currentPhotoBase64 = '';
     };
 
-    if (btnCloseAdd)  btnCloseAdd.addEventListener('click', closeAddModal);
+    if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
     if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAddModal);
     if (modalAdd) modalAdd.addEventListener('click', (e) => { if (e.target === modalAdd) closeAddModal(); });
 
     if (formAdd) {
       formAdd.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name  = document.getElementById('add-name').value;
+        const name = document.getElementById('add-name').value;
         const photo = currentPhotoBase64;
-        const qtd   = parseInt(document.getElementById('add-qtd').value);
-        const size  = document.getElementById('add-size').value;
+        const qtd = parseInt(document.getElementById('add-qtd').value);
+        const size = document.getElementById('add-size').value;
         const color = document.getElementById('add-color').value;
         Inventory.addProduct({ name, photo, qtd, size, color });
         Toast.show('Produto adicionado ao estoque!', 'success');
@@ -114,11 +114,11 @@ const Inventory = {
     }
 
     // --- Modal: Editar Produto ---
-    const modalEdit     = document.getElementById('modal-edit-product');
-    const btnCloseEdit  = document.getElementById('close-edit-modal');
+    const modalEdit = document.getElementById('modal-edit-product');
+    const btnCloseEdit = document.getElementById('close-edit-modal');
     const btnCancelEdit = document.getElementById('cancel-edit-modal');
-    const formEdit      = document.getElementById('form-edit-product');
-    const editPhotoInput   = document.getElementById('edit-photo');
+    const formEdit = document.getElementById('form-edit-product');
+    const editPhotoInput = document.getElementById('edit-photo');
     const editPhotoPreview = document.getElementById('edit-photo-preview');
 
     let editPhotoBase64 = null; // null = não trocou foto
@@ -151,17 +151,17 @@ const Inventory = {
       if (editPhotoPreview) editPhotoPreview.innerHTML = '';
     };
 
-    if (btnCloseEdit)  btnCloseEdit.addEventListener('click', closeEditModal);
+    if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
     if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
     if (modalEdit) modalEdit.addEventListener('click', (e) => { if (e.target === modalEdit) closeEditModal(); });
 
     if (formEdit) {
       formEdit.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id    = document.getElementById('edit-product-id').value;
-        const name  = document.getElementById('edit-name').value;
-        const qtd   = parseInt(document.getElementById('edit-qtd').value);
-        const size  = document.getElementById('edit-size').value;
+        const id = document.getElementById('edit-product-id').value;
+        const name = document.getElementById('edit-name').value;
+        const qtd = parseInt(document.getElementById('edit-qtd').value);
+        const size = document.getElementById('edit-size').value;
         const color = document.getElementById('edit-color').value;
 
         const updateData = { name, qtd, size, color };
@@ -179,10 +179,10 @@ const Inventory = {
     if (!prod) return;
 
     document.getElementById('edit-product-id').value = prod.id;
-    document.getElementById('edit-name').value        = prod.name;
-    document.getElementById('edit-qtd').value         = prod.qtd;
-    document.getElementById('edit-size').value        = prod.size || '';
-    document.getElementById('edit-color').value       = prod.color || '';
+    document.getElementById('edit-name').value = prod.name;
+    document.getElementById('edit-qtd').value = prod.qtd;
+    document.getElementById('edit-size').value = prod.size || '';
+    document.getElementById('edit-color').value = prod.color || '';
 
     document.getElementById('modal-edit-product').classList.add('active');
 
@@ -213,10 +213,10 @@ const Inventory = {
 
   addProduct: async (data) => {
     const { error } = await AppSupabase.from('inventory').insert([{
-      name:  data.name,
+      name: data.name,
       photo: data.photo || '',
-      qtd:   data.qtd,
-      size:  data.size,
+      qtd: data.qtd,
+      size: data.size,
       color: data.color
     }]);
 
