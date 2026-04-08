@@ -192,13 +192,16 @@ const Transactions = {
             Transactions.chartInstance.destroy();
         }
 
-        if (filtered.length === 0) {
+        // Filtra transações de investimento para não criar colunas ou datas no gráfico
+        const chartList = filtered.filter(t => t.trans_type !== 'invest');
+
+        if (chartList.length === 0) {
             return;
         }
 
         // Group by Date
         // Sort array by ascending datetime for the chart
-        const ascList = [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const ascList = [...chartList].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const groupedObj = {};
         ascList.forEach(t => {
@@ -210,12 +213,10 @@ const Transactions = {
             if (!groupedObj[ptDate]) groupedObj[ptDate] = { in: 0, out: 0, total: 0 };
 
             const v = parseFloat(t.amount);
-            if (v > 0 && t.trans_type !== 'invest') groupedObj[ptDate].in += v;
+            if (v > 0) groupedObj[ptDate].in += v;
             if (v < 0) groupedObj[ptDate].out += (-v); // make positive for bar
 
-            if (t.trans_type !== 'invest') {
-                groupedObj[ptDate].total += v; // raw for line excluding investments to track operational balance
-            }
+            groupedObj[ptDate].total += v; // raw for line excluding investments to track operational balance
         });
 
         const labels = Object.keys(groupedObj);
