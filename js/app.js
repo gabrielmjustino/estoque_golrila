@@ -148,6 +148,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       roleBadge.textContent = 'Operador Padrão☁️';
       roleBadge.style.background = 'rgba(16, 185, 129, 0.15)';
       roleBadge.style.color = '#34d399';
+
+      // Remove abas de transações e saídas
+      const navSold = document.getElementById('nav-sold');
+      const navTransactions = document.getElementById('nav-transactions');
+      if (navSold) navSold.parentElement.style.display = 'none';
+      if (navTransactions) navTransactions.parentElement.style.display = 'none';
     }
 
     // Inicializa Módulos em paralelo (Inventory + Sales ao mesmo tempo)
