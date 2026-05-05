@@ -44,6 +44,23 @@ body {
   display: flex;
 }
 
+/* Login view fica visível por padrão até o JS decidir o que mostrar */
+#login-view {
+  display: flex;
+}
+
+#app-view {
+  display: none;
+}
+
+#app-view.active {
+  display: flex;
+}
+
+#login-view.hidden {
+  display: none;
+}
+
 .sub-view {
   display: none;
   animation: fadeIn 0.3s ease;

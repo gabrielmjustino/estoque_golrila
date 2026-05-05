@@ -2,15 +2,26 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Verifica autenticacao (Supabase)
-  const isLoggedIn = await Auth.init();
+  // Login view já está visível via CSS por padrão
   const loginView = document.getElementById('login-view');
   const appView = document.getElementById('app-view');
 
+  // Mostra indicador de carregamento enquanto verifica sessão
+  const loginCard = loginView.querySelector('.login-card');
+  const loadingMsg = document.createElement('p');
+  loadingMsg.id = 'auth-checking-msg';
+  loadingMsg.style.cssText = 'color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;';
+  loadingMsg.textContent = 'Verificando sessão...';
+  loginCard.appendChild(loadingMsg);
+
+  const isLoggedIn = await Auth.init();
+  loadingMsg.remove();
+
   if (isLoggedIn) {
+    loginView.classList.add('hidden');
     showApp();
-  } else {
-    loginView.classList.add('active');
   }
+  // Se não estiver logado, login-view já está visível naturalmente
 
   // 3. Lidar com envio do form de login
   const loginForm = document.getElementById('login-form');
@@ -20,13 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const user = document.getElementById('login-username').value;
       const pass = document.getElementById('login-password').value;
 
+      const btn = loginForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
       const success = await Auth.login(user, pass);
+      btn.disabled = false;
+      btn.textContent = 'Entrar no Sistema';
+
       if (success) {
         Toast.show('Autenticação aprovada! Entrando...', 'success');
 
         // Pequeno delay para efeito visual premium
         setTimeout(() => {
-          loginView.classList.remove('active');
+          loginView.classList.add('hidden');
           showApp();
         }, 800);
       } else {

@@ -29,13 +29,17 @@ const Auth = {
   // Tenta realizar logon
   login: async (username, password) => {
     const email = username.includes('@') ? username : `${username}@golrila.com`;
+    console.log('[Auth] Tentando login com email:', email);
+
     const { data, error } = await AppSupabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
-      console.error('Erro de login:', error.message);
+      console.error('[Auth] Erro de login completo:', error);
+      console.error('[Auth] Mensagem:', error.message);
+      console.error('[Auth] Status:', error.status);
       return false;
     }
 
