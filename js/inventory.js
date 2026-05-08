@@ -51,9 +51,10 @@ const Inventory = {
         <td><span class="tag">${prod.color || '—'}</span></td>
         <td><span class="${qtdClass}">${prod.qtd} uni.</span></td>
         <td>
-          <button class="btn-icon edit"  onclick="Inventory.openEditModal('${prod.id}')"   title="Editar Produto"><i class='bx bx-pencil'></i></button>
-          <button class="btn-icon sell"  onclick="Inventory.openSellModal('${prod.id}')"   title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
-          <button class="btn-icon delete" onclick="Inventory.deleteProduct('${prod.id}')"  title="Remover do Sistema"><i class='bx bx-trash'></i></button>
+          <button class="btn-icon edit"    onclick="Inventory.openEditModal('${prod.id}')"    title="Editar Produto"><i class='bx bx-pencil'></i></button>
+          <button class="btn-icon sell"    onclick="Inventory.openSellModal('${prod.id}')"    title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
+          <button class="btn-icon reserve" onclick="Inventory.openReserveModal('${prod.id}')" title="Criar Reserva"><i class='bx bx-bookmark'></i></button>
+          <button class="btn-icon delete"  onclick="Inventory.deleteProduct('${prod.id}')"   title="Remover do Sistema"><i class='bx bx-trash'></i></button>
         </td>
       `;
       fragment.appendChild(tr);
@@ -253,6 +254,15 @@ const Inventory = {
       Sales.openSellModal(id);
     } else {
       Toast.show('Módulo de vendas está sendo construído...', 'warning');
+    }
+  },
+
+  // Encaminha para o módulo reservations.js
+  openReserveModal: (id) => {
+    if (typeof Reservations !== 'undefined') {
+      Reservations.openReserveModal(id);
+    } else {
+      Toast.show('Módulo de reservas está sendo construído...', 'warning');
     }
   }
 };

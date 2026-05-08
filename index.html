@@ -64,6 +64,7 @@
             (Entradas)</a></li>
         <li><a href="#" data-target="sold-view" id="nav-sold" class="nav-item"><i class='bx bx-cart'></i> Saídas
             (Vendidos)</a></li>
+        <li><a href="#" data-target="reservations-view" id="nav-reservations" class="nav-item"><i class='bx bx-bookmark'></i> Reservas</a></li>
         <li><a href="#" data-target="transactions-view" id="nav-transactions" class="nav-item"><i
               class='bx bx-transfer'></i> Transações</a>
         </li>
@@ -314,6 +315,37 @@
           </div>
         </div>
 
+        <!-- ========== RESERVATIONS VIEW ========== -->
+        <div id="reservations-view" class="sub-view">
+          <div class="view-header">
+            <div>
+              <h2>Reservas de Produtos</h2>
+              <p class="text-muted">Gerencie as reservas de clientes. Confirme como venda para registrar no financeiro.</p>
+            </div>
+          </div>
+
+          <div class="card mt-4">
+            <div class="table-responsive">
+              <table class="data-table" id="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Qtd.</th>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="reservations-tbody">
+                  <!-- JS populate -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- ========== TRANSACTIONS VIEW ========== -->
         <div id="transactions-view" class="sub-view">
           <div class="view-header">
@@ -528,6 +560,41 @@
     </div>
   </div>
 
+  <!-- Modal Reserve Product -->
+  <div id="modal-reserve-product" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Criar Reserva — <span id="reserve-product-name" style="color:var(--primary)"></span></h3>
+        <span class="close-modal" id="close-reserve-modal">&times;</span>
+      </div>
+      <form id="form-reserve-product">
+        <input type="hidden" id="reserve-product-id">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Nome do Cliente</label>
+            <input type="text" id="reserve-customer-name" placeholder="Nome completo" required>
+          </div>
+          <div class="input-group">
+            <label>Telefone / WhatsApp</label>
+            <input type="tel" id="reserve-customer-phone" placeholder="(00) 00000-0000">
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Endereço</label>
+            <input type="text" id="reserve-customer-address" placeholder="Rua, número, bairro...">
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Quantidade a Reservar (<span id="reserve-product-max"></span>)</label>
+            <input type="number" id="reserve-qtd" min="1" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancel-reserve-modal">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: rgba(252,191,0,0.85); color: #111;">Confirmar Reserva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts: ordem de carregamento importa -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -536,6 +603,7 @@
   <script src="js/app.js"></script>
   <script src="js/inventory.js"></script>
   <script src="js/sales.js"></script>
+  <script src="js/reservations.js"></script>
   <script src="js/transactions.js"></script>
   <script src="js/admin.js"></script>
 </body>

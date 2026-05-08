@@ -78,7 +78,9 @@ const Sales = {
     const closeModal = () => {
       if (modalSell) {
         modalSell.classList.remove('active');
-        document.getElementById('sell-product-id').value = '';
+        const sellIdEl = document.getElementById('sell-product-id');
+        sellIdEl.value = '';
+        delete sellIdEl.dataset.reservationId;
       }
       if (formSell) formSell.reset();
     };
@@ -264,8 +266,17 @@ const Sales = {
     await Sales.load();
     Sales.render();
 
+    // If this sale originated from a reservation, clean it up
+    const sellIdEl = document.getElementById('sell-product-id');
+    const reservationId = sellIdEl ? sellIdEl.dataset.reservationId : null;
+    if (reservationId && typeof Reservations !== 'undefined') {
+      await Reservations.cleanupAfterSale(reservationId);
+    }
+
     Toast.show(`Venda registrada com sucesso!`, 'success');
     document.getElementById('modal-sell-product').classList.remove('active');
+    // Clear reservation linkage
+    if (sellIdEl) delete sellIdEl.dataset.reservationId;
   }
 };
 

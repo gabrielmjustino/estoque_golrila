@@ -149,7 +149,7 @@ const Transactions = {
 
         const faturamento = totalIn;
         const lucro = totalIn + totalOut; // out is already negative
-        const investReal = totalInvest + totalOut;
+        const investReal = Math.max(0, totalInvest + totalOut);
 
         const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -171,14 +171,10 @@ const Transactions = {
 
         const elInvest = document.getElementById('stat-trans-invest');
         if (elInvest) {
-            elInvest.textContent = (investReal < 0 ? '-' : '') + formatBRL(investReal);
-            if (investReal < 0) {
-                elInvest.parentElement.previousElementSibling.style.color = "var(--danger)";
-                elInvest.style.color = "var(--danger)";
-            } else {
-                elInvest.parentElement.previousElementSibling.style.color = "#8b5cf6";
-                elInvest.style.color = "var(--text-main)";
-            }
+            elInvest.textContent = formatBRL(investReal);
+            // Always non-negative, so always use purple color
+            elInvest.parentElement.previousElementSibling.style.color = "#8b5cf6";
+            elInvest.style.color = "var(--text-main)";
         }
 
         Transactions.renderChart(filtered);

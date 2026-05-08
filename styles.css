@@ -486,6 +486,11 @@ body {
   color: var(--success);
 }
 
+.btn-icon.reserve:hover {
+  color: var(--primary);
+  background: rgba(252, 191, 0, 0.12);
+}
+
 .btn-icon.edit:hover {
   color: #60a5fa;
 }
