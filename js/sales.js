@@ -198,38 +198,51 @@ const Sales = {
   processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
-      Toast.show('Desculpe, ocorreu um erro na leitura do inventário.', 'error');
+      Toast.show('Desculpe, ocorreu um erro na leitura do inventario.', 'error');
       return;
     }
 
-    if (Inventory.products[pIndex].qtd < qtdSold) {
+    // Verifica se a venda veio de uma reserva (estoque ja foi deduzido na reserva)
+    const sellIdEl = document.getElementById('sell-product-id');
+    const fromReservation = sellIdEl && !!sellIdEl.dataset.reservationId;
+
+    if (!fromReservation && Inventory.products[pIndex].qtd < qtdSold) {
       Toast.show(`Quantidade solicitada excede o estoque limite de ${Inventory.products[pIndex].qtd}.`, 'error');
       return;
     }
 
     if (isNaN(totalPrice) || totalPrice <= 0) {
-      Toast.show('Por favor, defina um valor total válido para a venda.', 'warning');
+      Toast.show('Por favor, defina um valor total valido para a venda.', 'warning');
       return;
     }
 
     // Capture product name BEFORE any async reload (avoids stale index bug)
     const productName = Inventory.products[pIndex].name;
-    const newQtd = Inventory.products[pIndex].qtd - qtdSold;
+    const newQtd = Inventory.products[pIndex].qtd - (fromReservation ? 0 : qtdSold);
 
     const tDate = new Date().toISOString().split('T')[0];
 
-    // Run inventory update + sale insert in parallel
-    const [invResult, saleResult] = await Promise.all([
-      AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
-      AppSupabase.from('sales').insert([{
-        product_id: productId,
-        product_name: productName,
-        buyer_name: buyerName,
-        seller_name: sellerName,
-        qtd_sold: qtdSold,
-        payment_method: paymentMethod
-      }]).select()
-    ]);
+    // Se vier de reserva, NAO atualiza estoque novamente (ja foi deduzido na reserva)
+    const saleInsertPromise = AppSupabase.from('sales').insert([{
+      product_id: productId,
+      product_name: productName,
+      buyer_name: buyerName,
+      seller_name: sellerName,
+      qtd_sold: qtdSold,
+      payment_method: paymentMethod
+    }]).select();
+
+    let invResult = { error: null };
+    let saleResult;
+
+    if (fromReservation) {
+      saleResult = await saleInsertPromise;
+    } else {
+      [invResult, saleResult] = await Promise.all([
+        AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
+        saleInsertPromise
+      ]);
+    }
 
     if (invResult.error) {
       Toast.show('Erro ao deduzir o estoque.', 'error');
@@ -237,7 +250,7 @@ const Sales = {
     }
 
     if (saleResult.error) {
-      Toast.show('Venda não autorizada pelo banco de dados.', 'error');
+      Toast.show('Venda nao autorizada pelo banco de dados.', 'error');
       return;
     }
 
@@ -253,29 +266,29 @@ const Sales = {
       }]);
 
       if (transResult.error) {
-        Toast.show('Venda foi feita, mas não foi possível adicionar a transação.', 'warning');
+        Toast.show('Venda foi feita, mas nao foi possivel adicionar a transacao.', 'warning');
         console.error(transResult.error);
       }
     }
 
-    // Optimistically update local state
-    Inventory.products[pIndex].qtd = newQtd;
-    Inventory.render();
+    // Atualiza estado local apenas se nao veio de reserva (evita dupla deducao)
+    if (!fromReservation) {
+      Inventory.products[pIndex].qtd = newQtd;
+      Inventory.render();
+    }
 
     // Reload only sales (to get the newly inserted row with server timestamp)
     await Sales.load();
     Sales.render();
 
-    // If this sale originated from a reservation, clean it up
-    const sellIdEl = document.getElementById('sell-product-id');
+    // Se veio de reserva, remove a reserva da lista
     const reservationId = sellIdEl ? sellIdEl.dataset.reservationId : null;
     if (reservationId && typeof Reservations !== 'undefined') {
       await Reservations.cleanupAfterSale(reservationId);
     }
 
-    Toast.show(`Venda registrada com sucesso!`, 'success');
+    Toast.show('Venda registrada com sucesso!', 'success');
     document.getElementById('modal-sell-product').classList.remove('active');
-    // Clear reservation linkage
     if (sellIdEl) delete sellIdEl.dataset.reservationId;
   }
 };
