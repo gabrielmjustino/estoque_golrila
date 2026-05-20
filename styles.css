@@ -870,3 +870,109 @@ body {
   outline: none;
   border-color: var(--primary);
 }
+
+/* -------------------- RESERVATIONS SUMMARY CHIPS -------------------- */
+.reservations-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.res-chip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: chipIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.res-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.85) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);    }
+}
+
+.res-chip-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  background: rgba(252,191,0,0.12);
+  color: var(--primary);
+  border: 1px solid rgba(252,191,0,0.25);
+}
+
+.res-chip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.res-chip-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-chip-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-chip-stats {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.res-chip-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+.res-chip-badge.units {
+  background: rgba(252,191,0,0.12);
+  color: var(--primary);
+  border-color: rgba(252,191,0,0.3);
+}
+
+.res-chip-badge.clients {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.3);
+}
+
+@media (max-width: 768px) {
+  .res-chip {
+    min-width: calc(50% - 0.5rem);
+    max-width: none;
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+}

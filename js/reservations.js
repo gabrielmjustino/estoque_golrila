@@ -20,10 +20,57 @@ const Reservations = {
     }
   },
 
+  renderSummary: () => {
+    const container = document.getElementById('reservations-summary');
+    if (!container) return;
+
+    // Group by product_name + size
+    const groups = {};
+    Reservations.list.forEach(res => {
+      const key = `${res.product_name || '—'}||${res.size || '—'}`;
+      if (!groups[key]) {
+        groups[key] = {
+          name: res.product_name || '—',
+          size: res.size || '—',
+          totalUnits: 0,
+          customers: new Set()
+        };
+      }
+      groups[key].totalUnits += (res.qtd_reserved || 0);
+      if (res.customer_name) groups[key].customers.add(res.customer_name.trim().toLowerCase());
+    });
+
+    const keys = Object.keys(groups);
+
+    if (keys.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = keys.map((key, i) => {
+      const g = groups[key];
+      const delay = (i * 60) + 'ms';
+      const clientLabel = g.customers.size === 1 ? 'cliente' : 'clientes';
+      return `
+        <div class="res-chip" style="animation-delay: ${delay}">
+          <div class="res-chip-icon"><i class='bx bx-shirt'></i></div>
+          <div class="res-chip-body">
+            <span class="res-chip-title">${g.name}</span>
+            <span class="res-chip-sub">Tamanho: ${g.size}</span>
+            <div class="res-chip-stats">
+              <span class="res-chip-badge units"><i class='bx bx-package' style="font-size:0.7rem; vertical-align:middle;"></i> ${g.totalUnits} uni.</span>
+              <span class="res-chip-badge clients"><i class='bx bx-user' style="font-size:0.7rem; vertical-align:middle;"></i> ${g.customers.size} ${clientLabel}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  },
+
   render: () => {
     const tbody = document.getElementById('reservations-tbody');
     if (!tbody) return;
 
+    Reservations.renderSummary();
     tbody.innerHTML = '';
 
     if (Reservations.list.length === 0) {
