@@ -128,6 +128,8 @@ const Sales = {
     // Populate Modal Data
     document.getElementById('sell-product-id').value = product.id;
     document.getElementById('sell-product-name').textContent = product.name;
+    document.getElementById('sell-product-size').textContent = product.size || '—';
+    document.getElementById('sell-product-color').textContent = product.color || '—';
     document.getElementById('sell-product-max').textContent = `Máx disponível: ${product.qtd}`;
     document.getElementById('sell-qtd').max = product.qtd;
     document.getElementById('sell-qtd').value = 1; // Default to 1

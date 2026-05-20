@@ -110,6 +110,8 @@ const Reservations = {
 
     document.getElementById('reserve-product-id').value = product.id;
     document.getElementById('reserve-product-name').textContent = product.name;
+    document.getElementById('reserve-product-size').textContent = product.size || '—';
+    document.getElementById('reserve-product-color').textContent = product.color || '—';
     document.getElementById('reserve-product-max').textContent = `Máx disponível: ${product.qtd}`;
     document.getElementById('reserve-qtd').max = product.qtd;
     document.getElementById('reserve-qtd').value = 1;
