@@ -24,9 +24,16 @@ const Reservations = {
     const container = document.getElementById('reservations-summary');
     if (!container) return;
 
+    // Totais globais
+    let totalUnitsGlobal = 0;
+    const allCustomers = new Set();
+
     // Group by product_name + size
     const groups = {};
     Reservations.list.forEach(res => {
+      totalUnitsGlobal += (res.qtd_reserved || 0);
+      if (res.customer_name) allCustomers.add(res.customer_name.trim().toLowerCase());
+
       const key = `${res.product_name || '—'}||${res.size || '—'}`;
       if (!groups[key]) {
         groups[key] = {
@@ -47,9 +54,27 @@ const Reservations = {
       return;
     }
 
-    container.innerHTML = keys.map((key, i) => {
+    // Dois cards globais + separador + chips por produto
+    const globalCards = `
+      <div class="res-global-card" style="animation-delay: 0ms">
+        <div class="res-global-icon shirts"><i class='bx bx-shirt'></i></div>
+        <div class="res-global-body">
+          <span class="res-global-value">${totalUnitsGlobal}</span>
+          <span class="res-global-label">CAMISAS reservadas</span>
+        </div>
+      </div>
+      <div class="res-global-card" style="animation-delay: 60ms">
+        <div class="res-global-icon clients"><i class='bx bx-group'></i></div>
+        <div class="res-global-body">
+          <span class="res-global-value">${allCustomers.size}</span>
+          <span class="res-global-label">CLIENTES com reserva</span>
+        </div>
+      </div>
+      <div class="res-summary-divider"></div>`;
+
+    const chipCards = keys.map((key, i) => {
       const g = groups[key];
-      const delay = (i * 60) + 'ms';
+      const delay = ((i + 2) * 60) + 'ms';
       const clientLabel = g.customers.size === 1 ? 'cliente' : 'clientes';
       return `
         <div class="res-chip" style="animation-delay: ${delay}">
@@ -64,6 +89,8 @@ const Reservations = {
           </div>
         </div>`;
     }).join('');
+
+    container.innerHTML = globalCards + chipCards;
   },
 
   render: () => {
