@@ -27,7 +27,7 @@ const Reservations = {
     tbody.innerHTML = '';
 
     if (Reservations.list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva registrada até o momento.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva registrada até o momento.</td></tr>`;
       return;
     }
 
@@ -49,6 +49,7 @@ const Reservations = {
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
         <td style="font-weight: 500;">${res.product_name || '—'}</td>
+        <td><span class="tag">${res.size || '—'}</span></td>
         <td><span class="tag qtd" style="background: rgba(252,191,0,0.12); color: var(--primary); border-color: rgba(252,191,0,0.3);">${res.qtd_reserved} uni.</span></td>
         <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${res.customer_name || '—'}</td>
         <td style="color: var(--text-muted); font-size: 0.85rem;">${res.customer_phone || '—'}</td>
@@ -139,6 +140,8 @@ const Reservations = {
       AppSupabase.from('reservations').insert([{
         product_id: productId,
         product_name: productName,
+        size: Inventory.products[pIndex].size || null,
+        color: Inventory.products[pIndex].color || null,
         customer_name: customerName,
         customer_address: customerAddress,
         customer_phone: customerPhone,
