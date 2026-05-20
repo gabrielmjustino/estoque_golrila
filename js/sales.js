@@ -23,7 +23,7 @@ const Sales = {
     tbody.innerHTML = '';
 
     if (Sales.history.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
       return;
     }
 
@@ -55,6 +55,7 @@ const Sales = {
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
         <td style="font-weight: 500;">${productName}</td>
+        <td><span class="tag">${sale.size || '—'}</span></td>
         <td><span class="tag qtd danger">-${qtdSold} uni.</span></td>
         <td><span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">${paymentMethod}</span></td>
         <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${buyerName}</td>
@@ -226,6 +227,7 @@ const Sales = {
     const saleInsertPromise = AppSupabase.from('sales').insert([{
       product_id: productId,
       product_name: productName,
+      size: Inventory.products[pIndex].size || null,
       buyer_name: buyerName,
       seller_name: sellerName,
       qtd_sold: qtdSold,
