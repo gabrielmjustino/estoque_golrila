@@ -1113,3 +1113,174 @@ body {
 .personalization-input::placeholder {
   color: var(--text-muted);
 }
+
+/* -------------------- VALOR DA CONTA CARD -------------------- */
+.conta-card {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(59, 130, 246, 0.05) 100%);
+  transition: box-shadow 0.2s;
+}
+
+.conta-card:hover {
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+}
+
+.conta-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.conta-card-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.conta-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.conta-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.conta-subtitle {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.conta-value-wrap {
+  text-align: right;
+}
+
+.conta-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  transition: color 0.3s;
+}
+
+.conta-value.positive {
+  color: var(--success);
+}
+
+.conta-value.negative {
+  color: var(--danger);
+}
+
+.conta-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.conta-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conta-date-group label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.conta-date-input {
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-surface-light);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.conta-date-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.conta-date-fixed {
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.conta-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.conta-breakdown-item {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.conta-breakdown-item.in i { color: var(--success); }
+.conta-breakdown-item.out i { color: var(--danger); }
+
+.conta-breakdown-item strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.conta-breakdown-sep {
+  color: var(--border-color);
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .conta-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .conta-value {
+    font-size: 1.7rem;
+  }
+  .conta-card-controls {
+    gap: 1rem;
+  }
+  .conta-breakdown {
+    margin-left: 0;
+    width: 100%;
+  }
+}

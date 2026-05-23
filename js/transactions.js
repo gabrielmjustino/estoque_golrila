@@ -23,6 +23,12 @@ const Transactions = {
             });
         }
 
+        // Valor da Conta: re-render on date change
+        const contaStartDate = document.getElementById('conta-start-date');
+        if (contaStartDate) {
+            contaStartDate.addEventListener('change', () => Transactions.renderContaBalance());
+        }
+
         // Fechar se clicar fora do modal
         window.addEventListener('click', (e) => {
             if (e.target === modalAdd) {
@@ -100,6 +106,7 @@ const Transactions = {
         Transactions.transactionsList = data || [];
         Transactions.renderDashboard();
         Transactions.renderTransactions();
+        Transactions.renderContaBalance();
     },
 
     filterByPeriod: (list) => {
@@ -127,6 +134,58 @@ const Transactions = {
             }
             return true;
         });
+    },
+
+    renderContaBalance: () => {
+        const elBalance = document.getElementById('stat-conta-balance');
+        const elIn = document.getElementById('conta-in-label');
+        const elOut = document.getElementById('conta-out-label');
+        const elEndLabel = document.getElementById('conta-end-date-label');
+        if (!elBalance) return;
+
+        // Today (end date is always today)
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const todayStr = today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        if (elEndLabel) elEndLabel.textContent = todayStr;
+
+        // Start date from input (optional)
+        const startInput = document.getElementById('conta-start-date');
+        let startDate = null;
+        if (startInput && startInput.value) {
+            const [y, m, d] = startInput.value.split('-');
+            startDate = new Date(y, m - 1, d);
+            startDate.setHours(0, 0, 0, 0);
+        }
+
+        const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Filter: exclude invest, apply date range [startDate, today]
+        const relevant = Transactions.transactionsList.filter(t => {
+            if (t.trans_type === 'invest') return false;
+            if (!t.date) return false;
+            const parts = t.date.split('-');
+            const tDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            tDate.setHours(0, 0, 0, 0);
+            if (startDate && tDate < startDate) return false;
+            return true;
+        });
+
+        let totalIn = 0;
+        let totalOut = 0;
+        relevant.forEach(t => {
+            const v = parseFloat(t.amount);
+            if (v > 0) totalIn += v;
+            if (v < 0) totalOut += v; // already negative
+        });
+
+        const balance = totalIn + totalOut;
+
+        if (elIn) elIn.textContent = formatBRL(totalIn);
+        if (elOut) elOut.textContent = formatBRL(totalOut);
+
+        elBalance.textContent = (balance < 0 ? '-' : '') + formatBRL(balance);
+        elBalance.className = 'conta-value ' + (balance < 0 ? 'negative' : balance > 0 ? 'positive' : '');
     },
 
     renderDashboard: () => {

@@ -407,6 +407,37 @@
             </div>
           </div>
 
+          <!-- ===== VALOR DA CONTA ===== -->
+          <div class="card mt-4 conta-card">
+            <div class="conta-card-header">
+              <div class="conta-card-title">
+                <div class="conta-icon"><i class='bx bx-credit-card'></i></div>
+                <div>
+                  <span class="conta-label">Valor da Conta</span>
+                  <span class="conta-subtitle">Entradas menos Saídas no período</span>
+                </div>
+              </div>
+              <div class="conta-value-wrap">
+                <span id="stat-conta-balance" class="conta-value">R$ 0,00</span>
+              </div>
+            </div>
+            <div class="conta-card-controls">
+              <div class="conta-date-group">
+                <label for="conta-start-date"><i class='bx bx-calendar'></i> Data de Início</label>
+                <input type="date" id="conta-start-date" class="conta-date-input">
+              </div>
+              <div class="conta-date-group">
+                <label><i class='bx bx-calendar-check'></i> Data Final</label>
+                <div class="conta-date-fixed">Hoje (<span id="conta-end-date-label"></span>)</div>
+              </div>
+              <div class="conta-breakdown">
+                <span class="conta-breakdown-item in"><i class='bx bx-plus-circle'></i> Entradas: <strong id="conta-in-label">R$ 0,00</strong></span>
+                <span class="conta-breakdown-sep">—</span>
+                <span class="conta-breakdown-item out"><i class='bx bx-minus-circle'></i> Saídas: <strong id="conta-out-label">R$ 0,00</strong></span>
+              </div>
+            </div>
+          </div>
+
           <div class="card mt-4" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
               <h3 style="font-size: 1.1rem; color: var(--text-main);">Evolução Financeira</h3>
