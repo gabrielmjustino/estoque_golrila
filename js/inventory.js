@@ -211,25 +211,25 @@ const Inventory = {
 
     const { error } = await AppSupabase.from('inventory').update(data).eq('id', id);
     if (!error) {
-      // Propagate name change to sales and reservations so historical records stay in sync
+      // Propagate name change via RPC (SECURITY DEFINER bypasses RLS on sales/reservations)
       if (nameChanged) {
-        const propagate = [
-          AppSupabase.from('sales').update({ product_name: data.name }).eq('product_id', id),
-          AppSupabase.from('reservations').update({ product_name: data.name }).eq('product_id', id)
-        ];
-        const results = await Promise.all(propagate);
-        results.forEach((r, i) => {
-          if (r.error) console.warn(`Erro ao propagar nome para ${i === 0 ? 'sales' : 'reservations'}:`, r.error);
+        const { error: rpcError } = await AppSupabase.rpc('propagate_product_name', {
+          p_product_id: id,
+          p_new_name: data.name
         });
 
-        // Refresh Sales and Reservations lists if loaded
-        if (typeof Sales !== 'undefined' && Sales.load) {
-          await Sales.load();
-          Sales.render();
-        }
-        if (typeof Reservations !== 'undefined' && Reservations.load) {
-          await Reservations.load();
-          Reservations.render();
+        if (rpcError) {
+          console.warn('Erro ao propagar nome via RPC:', rpcError);
+        } else {
+          // Refresh Sales and Reservations lists if already loaded
+          if (typeof Sales !== 'undefined' && Sales.load) {
+            await Sales.load();
+            Sales.render();
+          }
+          if (typeof Reservations !== 'undefined' && Reservations.load) {
+            await Reservations.load();
+            Reservations.render();
+          }
         }
       }
 
