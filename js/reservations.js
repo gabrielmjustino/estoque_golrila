@@ -134,6 +134,7 @@ const Reservations = {
         <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${res.customer_address || ''}">${res.customer_address || '—'}</td>
         <td>${personalizationHtml}</td>
         <td>
+          <button class="btn-icon" onclick="Reservations.downloadDoc('${res.id}')" title="Baixar Documento da Reserva" style="color: var(--info); border-color: rgba(59,130,246,0.3);"><i class='bx bx-file-blank'></i></button>
           <button class="btn-icon sell" onclick="Reservations.confirmToSale('${res.id}')" title="Confirmar Venda e Mover para Saídas"><i class='bx bx-check-circle'></i></button>
           <button class="btn-icon delete" onclick="Reservations.cancelReservation('${res.id}')" title="Cancelar Reserva e Devolver Estoque"><i class='bx bx-x-circle'></i></button>
         </td>
@@ -362,5 +363,216 @@ const Reservations = {
     await AppSupabase.from('reservations').delete().eq('id', reservationId);
     Reservations.list = Reservations.list.filter(r => r.id !== reservationId);
     Reservations.render();
+  },
+
+  // Generate a short protocol code from the reservation ID and date
+  _buildProtocol: (id, createdAt) => {
+    const datePart = createdAt
+      ? new Date(createdAt).toLocaleDateString('pt-BR').replace(/\//g, '')
+      : new Date().toLocaleDateString('pt-BR').replace(/\//g, '');
+    const idPart = (id || '').toString().toUpperCase().slice(-6);
+    return `RES-${datePart}-${idPart}`;
+  },
+
+  // Download a styled HTML document as a printable page
+  downloadDoc: (reservationId) => {
+    const res = Reservations.list.find(r => r.id === reservationId);
+    if (!res) {
+      Toast.show('Reserva não encontrada.', 'error');
+      return;
+    }
+
+    const protocol = Reservations._buildProtocol(res.id, res.created_at);
+
+    const formattedDate = res.created_at
+      ? new Date(res.created_at).toLocaleDateString('pt-BR', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        })
+      : '—';
+
+    const personalizationSection = res.personalization
+      ? `<div class="doc-field">
+           <span class="doc-label">Personalização</span>
+           <span class="doc-value">${res.personalization}</span>
+         </div>`
+      : '';
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Reserva ${protocol}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8f9fc;
+      color: #1a1a2e;
+      padding: 2rem;
+    }
+    .doc-wrap {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .doc-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .doc-header h1 {
+      color: #fcbf00;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .doc-header p {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+    .doc-protocol {
+      background: rgba(252,191,0,0.15);
+      border: 1px solid rgba(252,191,0,0.4);
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      text-align: center;
+    }
+    .doc-protocol span { display: block; }
+    .doc-protocol .proto-label { color: rgba(255,255,255,0.5); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+    .doc-protocol .proto-code { color: #fcbf00; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+    .doc-body { padding: 2rem 2.5rem; }
+    .doc-section {
+      margin-bottom: 1.75rem;
+    }
+    .doc-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #888;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .doc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .doc-field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .doc-label { font-size: 0.72rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .doc-value { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; }
+    .doc-value.highlight { color: #fcbf00; }
+    .doc-tag {
+      display: inline-block;
+      background: rgba(252,191,0,0.1);
+      color: #a07c00;
+      border: 1px solid rgba(252,191,0,0.3);
+      border-radius: 6px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .doc-footer {
+      background: #f8f9fc;
+      border-top: 1px solid #eee;
+      padding: 1.2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .doc-footer p { font-size: 0.75rem; color: #aaa; }
+    .doc-watermark { font-size: 0.7rem; color: #ccc; }
+    @media print {
+      body { background: white; padding: 0; }
+      .doc-wrap { box-shadow: none; border-radius: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-wrap">
+    <div class="doc-header">
+      <div>
+        <h1>GolRila Estoques</h1>
+        <p>Documento de Reserva &mdash; ${formattedDate}</p>
+      </div>
+      <div class="doc-protocol">
+        <span class="proto-label">Protocolo</span>
+        <span class="proto-code">${protocol}</span>
+      </div>
+    </div>
+
+    <div class="doc-body">
+
+      <div class="doc-section">
+        <div class="doc-section-title">Dados do Cliente</div>
+        <div class="doc-grid">
+          <div class="doc-field" style="grid-column: span 2;">
+            <span class="doc-label">Nome</span>
+            <span class="doc-value">${res.customer_name || '—'}</span>
+          </div>
+          <div class="doc-field">
+            <span class="doc-label">Telefone / WhatsApp</span>
+            <span class="doc-value">${res.customer_phone || '—'}</span>
+          </div>
+          <div class="doc-field">
+            <span class="doc-label">Endereço</span>
+            <span class="doc-value">${res.customer_address || '—'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">Produto Reservado</div>
+        <div class="doc-grid">
+          <div class="doc-field" style="grid-column: span 2;">
+            <span class="doc-label">Produto</span>
+            <span class="doc-value">${res.product_name || '—'}</span>
+          </div>
+          <div class="doc-field">
+            <span class="doc-label">Tamanho</span>
+            <span class="doc-value"><span class="doc-tag">${res.size || '—'}</span></span>
+          </div>
+          <div class="doc-field">
+            <span class="doc-label">Quantidade</span>
+            <span class="doc-value">${res.qtd_reserved} unidade(s)</span>
+          </div>
+          ${personalizationSection}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="doc-footer">
+      <p>Emitido em: ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+      <p class="doc-watermark">GolRila Estoques &copy; ${new Date().getFullYear()}</p>
+    </div>
+  </div>
+
+  <script>
+    window.onload = () => window.print();
+  <\/script>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reserva_${protocol}.html`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+
+    Toast.show(`Documento da reserva ${protocol} baixado!`, 'success');
   }
 };
