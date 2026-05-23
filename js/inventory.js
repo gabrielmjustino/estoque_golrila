@@ -205,8 +205,34 @@ const Inventory = {
   },
 
   updateProduct: async (id, data) => {
+    // Find previous name to detect if name changed
+    const oldProduct = Inventory.products.find(p => p.id === id);
+    const nameChanged = oldProduct && data.name && data.name !== oldProduct.name;
+
     const { error } = await AppSupabase.from('inventory').update(data).eq('id', id);
     if (!error) {
+      // Propagate name change to sales and reservations so historical records stay in sync
+      if (nameChanged) {
+        const propagate = [
+          AppSupabase.from('sales').update({ product_name: data.name }).eq('product_id', id),
+          AppSupabase.from('reservations').update({ product_name: data.name }).eq('product_id', id)
+        ];
+        const results = await Promise.all(propagate);
+        results.forEach((r, i) => {
+          if (r.error) console.warn(`Erro ao propagar nome para ${i === 0 ? 'sales' : 'reservations'}:`, r.error);
+        });
+
+        // Refresh Sales and Reservations lists if loaded
+        if (typeof Sales !== 'undefined' && Sales.load) {
+          await Sales.load();
+          Sales.render();
+        }
+        if (typeof Reservations !== 'undefined' && Reservations.load) {
+          await Reservations.load();
+          Reservations.render();
+        }
+      }
+
       await Inventory.load();
       Inventory.render();
       Toast.show('Produto atualizado com sucesso!', 'success');
