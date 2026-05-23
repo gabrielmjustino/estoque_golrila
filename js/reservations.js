@@ -101,7 +101,7 @@ const Reservations = {
     tbody.innerHTML = '';
 
     if (Reservations.list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva registrada até o momento.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva registrada até o momento.</td></tr>`;
       return;
     }
 
@@ -119,6 +119,10 @@ const Reservations = {
         }
       }
 
+      const personalizationHtml = res.personalization
+        ? `<span class="tag" style="background: rgba(139,92,246,0.15); color: #a78bfa; border-color: rgba(139,92,246,0.3); max-width: 140px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${res.personalization}"><i class='bx bx-brush' style="font-size:0.7rem; vertical-align:middle;"></i> ${res.personalization}</span>`
+        : `<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>`;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
@@ -128,6 +132,7 @@ const Reservations = {
         <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${res.customer_name || '—'}</td>
         <td style="color: var(--text-muted); font-size: 0.85rem;">${res.customer_phone || '—'}</td>
         <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${res.customer_address || ''}">${res.customer_address || '—'}</td>
+        <td>${personalizationHtml}</td>
         <td>
           <button class="btn-icon sell" onclick="Reservations.confirmToSale('${res.id}')" title="Confirmar Venda e Mover para Saídas"><i class='bx bx-check-circle'></i></button>
           <button class="btn-icon delete" onclick="Reservations.cancelReservation('${res.id}')" title="Cancelar Reserva e Devolver Estoque"><i class='bx bx-x-circle'></i></button>
@@ -145,16 +150,45 @@ const Reservations = {
     const btnCancel = document.getElementById('cancel-reserve-modal');
     const form = document.getElementById('form-reserve-product');
 
+    const resetPersonalization = () => {
+      const noBtn = document.getElementById('reserve-pers-no');
+      const yesBtn = document.getElementById('reserve-pers-yes');
+      const persText = document.getElementById('reserve-personalization-text');
+      if (noBtn) noBtn.classList.add('active');
+      if (yesBtn) yesBtn.classList.remove('active');
+      if (persText) { persText.style.display = 'none'; persText.value = ''; }
+    };
+
     const closeModal = () => {
       if (modal) modal.classList.remove('active');
       if (form) form.reset();
       const hiddenId = document.getElementById('reserve-product-id');
       if (hiddenId) hiddenId.value = '';
+      resetPersonalization();
     };
 
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
     if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // Personalization toggle
+    const resPersNo = document.getElementById('reserve-pers-no');
+    const resPersYes = document.getElementById('reserve-pers-yes');
+    const resPersText = document.getElementById('reserve-personalization-text');
+    if (resPersNo && resPersYes && resPersText) {
+      resPersNo.addEventListener('click', () => {
+        resPersNo.classList.add('active');
+        resPersYes.classList.remove('active');
+        resPersText.style.display = 'none';
+        resPersText.value = '';
+      });
+      resPersYes.addEventListener('click', () => {
+        resPersYes.classList.add('active');
+        resPersNo.classList.remove('active');
+        resPersText.style.display = 'block';
+        resPersText.focus();
+      });
+    }
 
     if (form) {
       form.addEventListener('submit', async (e) => {
@@ -164,8 +198,10 @@ const Reservations = {
         const customerAddress = document.getElementById('reserve-customer-address').value;
         const customerPhone = document.getElementById('reserve-customer-phone').value;
         const qtd = parseInt(document.getElementById('reserve-qtd').value);
+        const persYesActive = document.getElementById('reserve-pers-yes')?.classList.contains('active');
+        const personalization = persYesActive ? (document.getElementById('reserve-personalization-text')?.value.trim() || null) : null;
 
-        await Reservations.makeReservation(productId, customerName, customerAddress, customerPhone, qtd);
+        await Reservations.makeReservation(productId, customerName, customerAddress, customerPhone, qtd, personalization);
         closeModal();
       });
     }
@@ -196,7 +232,7 @@ const Reservations = {
     document.getElementById('modal-reserve-product').classList.add('active');
   },
 
-  makeReservation: async (productId, customerName, customerAddress, customerPhone, qtd) => {
+  makeReservation: async (productId, customerName, customerAddress, customerPhone, qtd, personalization = null) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Produto não encontrado no inventário.', 'error');
@@ -221,7 +257,8 @@ const Reservations = {
         customer_name: customerName,
         customer_address: customerAddress,
         customer_phone: customerPhone,
-        qtd_reserved: qtd
+        qtd_reserved: qtd,
+        personalization: personalization || null
       }]).select()
     ]);
 

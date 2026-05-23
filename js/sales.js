@@ -23,7 +23,7 @@ const Sales = {
     tbody.innerHTML = '';
 
     if (Sales.history.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
       return;
     }
 
@@ -51,6 +51,10 @@ const Sales = {
       const buyerName = sale.buyer_name || '—';
       const sellerName = sale.seller_name || '—';
 
+      const personalizationHtml = sale.personalization
+        ? `<span class="tag" style="background: rgba(139,92,246,0.15); color: #a78bfa; border-color: rgba(139,92,246,0.3); max-width: 160px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${sale.personalization}"><i class='bx bx-brush' style="font-size:0.7rem; vertical-align:middle;"></i> ${sale.personalization}</span>`
+        : `<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>`;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
@@ -60,6 +64,7 @@ const Sales = {
         <td><span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">${paymentMethod}</span></td>
         <td><i class='bx bx-user' style="color:var(--text-muted); margin-right:4px;"></i> ${buyerName}</td>
         <td><i class='bx bxs-badge-check' style="color:var(--primary); margin-right:4px;"></i> ${sellerName}</td>
+        <td>${personalizationHtml}</td>
         <td>
           <button class="btn-icon delete" onclick="Sales.cancelSale('${sale.id}')" title="Cancelar Venda e Devolver Estoque"><i class='bx bx-x-circle'></i></button>
         </td>
@@ -76,6 +81,15 @@ const Sales = {
     const btnCancelSell = document.getElementById('cancel-sell-modal');
     const formSell = document.getElementById('form-sell-product');
 
+    const resetPersonalization = () => {
+      const noBtn = document.getElementById('sell-pers-no');
+      const yesBtn = document.getElementById('sell-pers-yes');
+      const persText = document.getElementById('sell-personalization-text');
+      if (noBtn) noBtn.classList.add('active');
+      if (yesBtn) yesBtn.classList.remove('active');
+      if (persText) { persText.style.display = 'none'; persText.value = ''; }
+    };
+
     const closeModal = () => {
       if (modalSell) {
         modalSell.classList.remove('active');
@@ -84,6 +98,7 @@ const Sales = {
         delete sellIdEl.dataset.reservationId;
       }
       if (formSell) formSell.reset();
+      resetPersonalization();
     };
 
     if (btnCloseSell) btnCloseSell.addEventListener('click', closeModal);
@@ -93,6 +108,25 @@ const Sales = {
     if (modalSell) {
       modalSell.addEventListener('click', (e) => {
         if (e.target === modalSell) closeModal();
+      });
+    }
+
+    // Personalization toggle
+    const sellPersNo = document.getElementById('sell-pers-no');
+    const sellPersYes = document.getElementById('sell-pers-yes');
+    const sellPersText = document.getElementById('sell-personalization-text');
+    if (sellPersNo && sellPersYes && sellPersText) {
+      sellPersNo.addEventListener('click', () => {
+        sellPersNo.classList.add('active');
+        sellPersYes.classList.remove('active');
+        sellPersText.style.display = 'none';
+        sellPersText.value = '';
+      });
+      sellPersYes.addEventListener('click', () => {
+        sellPersYes.classList.add('active');
+        sellPersNo.classList.remove('active');
+        sellPersText.style.display = 'block';
+        sellPersText.focus();
       });
     }
 
@@ -106,8 +140,10 @@ const Sales = {
         const qtdSold = parseInt(document.getElementById('sell-qtd').value);
         const paymentMethod = document.getElementById('sell-payment-method').value;
         const totalPrice = parseFloat(document.getElementById('sell-total-price').value);
+        const persYesActive = document.getElementById('sell-pers-yes')?.classList.contains('active');
+        const personalization = persYesActive ? (document.getElementById('sell-personalization-text')?.value.trim() || null) : null;
 
-        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice);
+        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization);
       });
     }
   },
@@ -198,7 +234,7 @@ const Sales = {
     }
   },
 
-  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice) => {
+  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization = null) => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Desculpe, ocorreu um erro na leitura do inventario.', 'error');
@@ -233,7 +269,8 @@ const Sales = {
       buyer_name: buyerName,
       seller_name: sellerName,
       qtd_sold: qtdSold,
-      payment_method: paymentMethod
+      payment_method: paymentMethod,
+      personalization: personalization || null
     }]).select();
 
     let invResult = { error: null };
