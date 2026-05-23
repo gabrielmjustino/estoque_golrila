@@ -1,33 +1,22 @@
-# GolRila Estoques
+Sistema de Estoque — Loja de Camisas de Time
 
-Sistema de controle de estoque interno premium, totalmente cliente-side e preparado para deploy estático.
+Este projeto foi desenvolvido com o objetivo de centralizar e organizar dados logísticos da minha loja de camisas de time, permitindo um controle mais eficiente de estoque, produtos, movimentações e informações operacionais do negócio.
 
-## Como fazer o deploy na Vercel
+O sistema foi construído utilizando JavaScript e Supabase como backend principal, garantindo uma estrutura moderna, escalável e prática para gerenciamento de dados em tempo real.
 
-Por ser uma aplicação baseada inteiramente em HTML, CSS e JavaScript estáticos, este projeto é perfeitamente compatível com o **Vercel** sem precisar de nenhum servidor Node.js ou build complexo por trás.
+Todo o código do projeto foi programado 100% com auxílio do Anthropic Claude Code, passando por revisão manual feita por mim, além de constantes ajustes, melhorias e novas implementações conforme a necessidade da operação da loja.
 
-### Método 1: Pelo GitHub (Recomendado)
-1. Crie um repositório no seu GitHub.
-2. Suba todos os arquivos desta pasta (`index.html`, `styles.css`, `vercel.json`, `LOGO.ico` e a pasta `js/`) para o repositório.
-3. Acesse sua conta na [Vercel](https://vercel.com/) e clique em **Add New Project**.
-4. Importe o repositório do GitHub que você acabou de criar.
-5. Em "Framework Preset", mantenha as configurações padrão (geralmente será detectado automaticamente como **Other**).
-6. Clique em **Deploy**. Sua aplicação estará online em alguns segundos!
+Objetivos do sistema
+Organização do estoque
+Controle logístico de produtos
+Registro e gerenciamento de informações
+Otimização da operação da loja
+Facilidade para futuras expansões do projeto
+Tecnologias utilizadas
+JavaScript
+Supabase
+HTML/CSS
+APIs e automações auxiliares
+Status do projeto
 
-### Método 2: Pelo Vercel CLI (Direto do Computador)
-1. Instale o Vercel de forma global através do prompt de comando/terminal da pasta:
-   ```cmd
-   npm i -g vercel
-   ```
-2. Após rodar o comando acima, execute na mesma pasta (`estoque-app`):
-   ```cmd
-   vercel
-   ```
-3. Siga os passos no terminal sugerindo as configurações padrões para subir o projeto imediatamente!
-
-## Funcionalidades Prontas:
-- Login e autenticação Local
-- Gestão de Multi-Usuários (Nível Admin / Nível Operador)
-- Histórico Baseado em Memória de Navegador (LocalStorage)
-- Cadastro de Produtos com Imagens
-- Vendas com abate automático de produtos
+O sistema está em constante atualização e evolução, recebendo melhorias frequentes tanto na interface quanto na estrutura e funcionalidades internas.
