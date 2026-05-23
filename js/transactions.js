@@ -23,10 +23,22 @@ const Transactions = {
             });
         }
 
-        // Valor da Conta: re-render on date change
+        // Valor da Conta: persist start date in localStorage
         const contaStartDate = document.getElementById('conta-start-date');
         if (contaStartDate) {
-            contaStartDate.addEventListener('change', () => Transactions.renderContaBalance());
+            // Restore saved date
+            const savedDate = localStorage.getItem('conta_start_date');
+            if (savedDate) contaStartDate.value = savedDate;
+
+            contaStartDate.addEventListener('change', () => {
+                const val = contaStartDate.value;
+                if (val) {
+                    localStorage.setItem('conta_start_date', val);
+                } else {
+                    localStorage.removeItem('conta_start_date');
+                }
+                Transactions.renderContaBalance();
+            });
         }
 
         // Fechar se clicar fora do modal
