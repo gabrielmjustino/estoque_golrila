@@ -375,11 +375,25 @@ const Reservations = {
   },
 
   // Download a styled HTML document as a printable page
-  downloadDoc: (reservationId) => {
+  downloadDoc: async (reservationId) => {
     const res = Reservations.list.find(r => r.id === reservationId);
     if (!res) {
       Toast.show('Reserva não encontrada.', 'error');
       return;
+    }
+
+    // Fetch logo and convert to base64 so it works offline in the downloaded file
+    let logoDataUrl = '';
+    try {
+      const logoResp = await fetch('LOGO.png');
+      const logoBlob = await logoResp.blob();
+      logoDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(logoBlob);
+      });
+    } catch (_) {
+      // Logo not available — header will show text fallback
     }
 
     const protocol = Reservations._buildProtocol(res.id, res.created_at);
@@ -502,7 +516,9 @@ const Reservations = {
   <div class="doc-wrap">
     <div class="doc-header">
       <div>
-        <h1>GolRila Estoques</h1>
+        ${logoDataUrl
+          ? `<img src="${logoDataUrl}" alt="GolRila Logo" style="height: 60px; width: auto; margin-bottom: 4px; display: block;">`
+          : `<h1 style="color:#fcbf00;font-size:1.5rem;font-weight:700;">GolRila Estoques</h1>`}
         <p>Documento de Reserva &mdash; ${formattedDate}</p>
       </div>
       <div class="doc-protocol">
