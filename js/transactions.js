@@ -63,12 +63,28 @@ const Transactions = {
                 const dateStr = document.getElementById('add-transaction-date').value;
                 const description = document.getElementById('add-transaction-description').value;
 
-                if (isNaN(rawAmount)) {
-                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido.', 'warning');
+                if (isNaN(rawAmount) || rawAmount <= 0) {
+                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido. Informe um valor maior que zero.', 'warning');
                     return;
                 }
 
                 const amount = transType === 'out' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+                // Valida se o saldo ficaria negativo para saídas manuais
+                if (transType === 'out') {
+                    // Usa o saldo histórico TOTAL (todas as transações exceto invest, sem filtro de data)
+                    const currentBalance = Transactions.transactionsList
+                        .filter(t => t.trans_type !== 'invest')
+                        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                    const balanceAfter = currentBalance + amount;
+                    if (balanceAfter < 0) {
+                        if (typeof Toast !== 'undefined') Toast.show(
+                            `Saldo insuficiente! Saldo atual: ${currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. Esta saída deixaria a conta negativa.`,
+                            'error'
+                        );
+                        return;
+                    }
+                }
 
                 // Get current user name
                 const currentUser = Auth.getCurrentUser();
@@ -161,7 +177,7 @@ const Transactions = {
         const todayStr = today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         if (elEndLabel) elEndLabel.textContent = todayStr;
 
-        // Start date from input (optional)
+        // Start date from input (optional) — afeta apenas o breakdown de entradas/saídas do período
         const startInput = document.getElementById('conta-start-date');
         let startDate = null;
         if (startInput && startInput.value) {
@@ -172,31 +188,42 @@ const Transactions = {
 
         const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        // Filter: exclude invest, apply date range [startDate, today]
-        const relevant = Transactions.transactionsList.filter(t => {
-            if (t.trans_type === 'invest') return false;
-            if (!t.date) return false;
+        // Saldo total histórico: usa TODAS as transações (exceto invest) — nunca filtrado por data
+        const allRelevant = Transactions.transactionsList.filter(t => t.trans_type !== 'invest' && t.date);
+
+        let totalBalanceIn = 0;
+        let totalBalanceOut = 0;
+        allRelevant.forEach(t => {
+            const v = parseFloat(t.amount);
+            if (v > 0) totalBalanceIn += v;
+            if (v < 0) totalBalanceOut += v;
+        });
+        const balance = totalBalanceIn + totalBalanceOut;
+
+        // Garante que o saldo nunca seja exibido como negativo por inconsistência de dados
+        const displayBalance = Math.max(0, balance);
+
+        // Breakdown por período (para os labels de entradas/saídas)
+        const periodRelevant = allRelevant.filter(t => {
+            if (!startDate) return true;
             const parts = t.date.split('-');
             const tDate = new Date(parts[0], parts[1] - 1, parts[2]);
             tDate.setHours(0, 0, 0, 0);
-            if (startDate && tDate < startDate) return false;
-            return true;
+            return tDate >= startDate;
         });
 
         let totalIn = 0;
         let totalOut = 0;
-        relevant.forEach(t => {
+        periodRelevant.forEach(t => {
             const v = parseFloat(t.amount);
             if (v > 0) totalIn += v;
-            if (v < 0) totalOut += v; // already negative
+            if (v < 0) totalOut += v;
         });
-
-        const balance = totalIn + totalOut;
 
         if (elIn) elIn.textContent = formatBRL(totalIn);
         if (elOut) elOut.textContent = formatBRL(totalOut);
 
-        elBalance.textContent = (balance < 0 ? '-' : '') + formatBRL(balance);
+        elBalance.textContent = formatBRL(displayBalance);
         elBalance.className = 'conta-value ' + (balance < 0 ? 'negative' : balance > 0 ? 'positive' : '');
     },
 

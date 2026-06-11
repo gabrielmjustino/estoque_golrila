@@ -293,6 +293,49 @@
             </div>
           </div>
 
+          <!-- Resumo de Vendas -->
+          <div class="dashboard-stats mt-4">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(99,102,241,0.15); color: var(--primary);"><i class='bx bx-receipt'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-total-ops">0</h3>
+                <p>Total de Vendas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(239,68,68,0.15); color: var(--danger);"><i class='bx bx-shopping-bag'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-total-units">0</h3>
+                <p>Unidades Vendidas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: var(--success);"><i class='bx bx-package'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-unique-products">0</h3>
+                <p>Produtos Distintos</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(252,191,0,0.15); color: var(--primary);"><i class='bx bx-trophy'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-top-product" title="">—</h3>
+                <p>Mais Vendido</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ranking de produtos mais vendidos -->
+          <div class="card mt-4">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1rem;">
+              <h3 style="font-size:1rem; color:var(--text-main);">🏆 Ranking de Produtos Mais Vendidos</h3>
+              <span id="sold-ranking-subtitle" style="font-size:0.8rem; color:var(--text-muted);"></span>
+            </div>
+            <div id="sold-ranking-list" style="display:flex;flex-direction:column;gap:0.75rem;">
+              <!-- JS populate -->
+            </div>
+          </div>
+
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="sold-table">
@@ -414,7 +457,7 @@
                 <div class="conta-icon"><i class='bx bx-credit-card'></i></div>
                 <div>
                   <span class="conta-label">Valor da Conta</span>
-                  <span class="conta-subtitle">Entradas menos Saídas no período</span>
+                  <span class="conta-subtitle">Saldo histórico total (todas as transações)</span>
                 </div>
               </div>
               <div class="conta-value-wrap">
