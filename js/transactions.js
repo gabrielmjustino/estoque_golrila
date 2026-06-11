@@ -63,12 +63,25 @@ const Transactions = {
                 const dateStr = document.getElementById('add-transaction-date').value;
                 const description = document.getElementById('add-transaction-description').value;
 
-                if (isNaN(rawAmount)) {
-                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido.', 'warning');
+                if (isNaN(rawAmount) || rawAmount <= 0) {
+                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido. Informe um valor maior que zero.', 'warning');
                     return;
                 }
 
                 const amount = transType === 'out' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+                // Valida se o saldo ficaria negativo para saídas manuais
+                if (transType === 'out') {
+                    const currentBalance = Transactions.transactionsList.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                    const balanceAfter = currentBalance + amount; // amount já é negativo
+                    if (balanceAfter < 0) {
+                        if (typeof Toast !== 'undefined') Toast.show(
+                            `Saldo insuficiente! Saldo atual: ${currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. Esta saída deixaria a conta negativa.`,
+                            'error'
+                        );
+                        return;
+                    }
+                }
 
                 // Get current user name
                 const currentUser = Auth.getCurrentUser();

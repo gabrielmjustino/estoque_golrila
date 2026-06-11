@@ -293,7 +293,51 @@
             </div>
           </div>
 
+          <!-- Stats de Saídas -->
+          <div class="dashboard-stats mt-4">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class='bx bx-cart-download'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-total-ops">0</h3>
+                <p>Vendas Realizadas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i class='bx bx-shopping-bag'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-total-units">0</h3>
+                <p>Unidades Vendidas</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class='bx bx-star'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-top-product">—</h3>
+                <p>Produto Mais Vendido</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);"><i class='bx bx-package'></i></div>
+              <div class="stat-details">
+                <h3 id="sold-stat-unique-products">0</h3>
+                <p>Produtos Diferentes</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ranking por Produto e Tamanho -->
           <div class="card mt-4">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+              <h3 style="font-size:1.05rem;color:var(--text-main);margin:0;"><i class='bx bx-bar-chart-alt-2' style="color:var(--primary);margin-right:6px;"></i>Qtd. Vendida por Produto</h3>
+              <span id="sold-ranking-subtitle" style="font-size:0.8rem;color:var(--text-muted);"></span>
+            </div>
+            <div id="sold-ranking-list" style="display:flex;flex-direction:column;gap:0.6rem;">
+              <!-- JS populate -->
+            </div>
+          </div>
+
+          <div class="card mt-4">
+
             <div class="table-responsive">
               <table class="data-table" id="sold-table">
                 <thead>
