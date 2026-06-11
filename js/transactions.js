@@ -23,6 +23,24 @@ const Transactions = {
             });
         }
 
+        // Valor da Conta: persist start date in localStorage
+        const contaStartDate = document.getElementById('conta-start-date');
+        if (contaStartDate) {
+            // Restore saved date
+            const savedDate = localStorage.getItem('conta_start_date');
+            if (savedDate) contaStartDate.value = savedDate;
+
+            contaStartDate.addEventListener('change', () => {
+                const val = contaStartDate.value;
+                if (val) {
+                    localStorage.setItem('conta_start_date', val);
+                } else {
+                    localStorage.removeItem('conta_start_date');
+                }
+                Transactions.renderContaBalance();
+            });
+        }
+
         // Fechar se clicar fora do modal
         window.addEventListener('click', (e) => {
             if (e.target === modalAdd) {
@@ -45,25 +63,12 @@ const Transactions = {
                 const dateStr = document.getElementById('add-transaction-date').value;
                 const description = document.getElementById('add-transaction-description').value;
 
-                if (isNaN(rawAmount) || rawAmount <= 0) {
-                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido. Informe um valor maior que zero.', 'warning');
+                if (isNaN(rawAmount)) {
+                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido.', 'warning');
                     return;
                 }
 
                 const amount = transType === 'out' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
-
-                // Valida se o saldo ficaria negativo para saídas manuais
-                if (transType === 'out') {
-                    const currentBalance = Transactions.transactionsList.reduce((sum, t) => sum + parseFloat(t.amount), 0);
-                    const balanceAfter = currentBalance + amount; // amount já é negativo
-                    if (balanceAfter < 0) {
-                        if (typeof Toast !== 'undefined') Toast.show(
-                            `Saldo insuficiente! Saldo atual: ${currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. Esta saída deixaria a conta negativa.`,
-                            'error'
-                        );
-                        return;
-                    }
-                }
 
                 // Get current user name
                 const currentUser = Auth.getCurrentUser();
@@ -113,6 +118,7 @@ const Transactions = {
         Transactions.transactionsList = data || [];
         Transactions.renderDashboard();
         Transactions.renderTransactions();
+        Transactions.renderContaBalance();
     },
 
     filterByPeriod: (list) => {
@@ -142,15 +148,65 @@ const Transactions = {
         });
     },
 
+    renderContaBalance: () => {
+        const elBalance = document.getElementById('stat-conta-balance');
+        const elIn = document.getElementById('conta-in-label');
+        const elOut = document.getElementById('conta-out-label');
+        const elEndLabel = document.getElementById('conta-end-date-label');
+        if (!elBalance) return;
+
+        // Today (end date is always today)
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const todayStr = today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        if (elEndLabel) elEndLabel.textContent = todayStr;
+
+        // Start date from input (optional)
+        const startInput = document.getElementById('conta-start-date');
+        let startDate = null;
+        if (startInput && startInput.value) {
+            const [y, m, d] = startInput.value.split('-');
+            startDate = new Date(y, m - 1, d);
+            startDate.setHours(0, 0, 0, 0);
+        }
+
+        const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Filter: exclude invest, apply date range [startDate, today]
+        const relevant = Transactions.transactionsList.filter(t => {
+            if (t.trans_type === 'invest') return false;
+            if (!t.date) return false;
+            const parts = t.date.split('-');
+            const tDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            tDate.setHours(0, 0, 0, 0);
+            if (startDate && tDate < startDate) return false;
+            return true;
+        });
+
+        let totalIn = 0;
+        let totalOut = 0;
+        relevant.forEach(t => {
+            const v = parseFloat(t.amount);
+            if (v > 0) totalIn += v;
+            if (v < 0) totalOut += v; // already negative
+        });
+
+        const balance = totalIn + totalOut;
+
+        if (elIn) elIn.textContent = formatBRL(totalIn);
+        if (elOut) elOut.textContent = formatBRL(totalOut);
+
+        elBalance.textContent = (balance < 0 ? '-' : '') + formatBRL(balance);
+        elBalance.className = 'conta-value ' + (balance < 0 ? 'negative' : balance > 0 ? 'positive' : '');
+    },
+
     renderDashboard: () => {
         const filtered = Transactions.filterByPeriod(Transactions.transactionsList);
-        const allTransactions = Transactions.transactionsList; // Saldo real usa TODAS as transações
 
         let totalIn = 0;
         let totalOut = 0;
         let totalInvest = 0;
 
-        // Entradas/Saídas do período selecionado
         filtered.forEach(t => {
             if (t.trans_type === 'invest') {
                 totalInvest += parseFloat(t.amount);
@@ -163,13 +219,8 @@ const Transactions = {
         });
 
         const faturamento = totalIn;
-
-        // Saldo real da conta: soma acumulativa de TODAS as transações (histórico completo)
-        // O saldo é sempre acumulativo - não pode ser filtrado por período
-        const saldoReal = allTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
-
-        // Saldo do investimento baseado no período
-        const investReal = totalInvest + totalOut;
+        const lucro = totalIn + totalOut; // out is already negative
+        const investReal = Math.max(0, totalInvest + totalOut);
 
         const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -179,35 +230,22 @@ const Transactions = {
 
         const elProfit = document.getElementById('stat-trans-profit');
         if (elProfit) {
-            elProfit.textContent = (saldoReal < 0 ? '-' : '') + formatBRL(saldoReal);
-            if (saldoReal < 0) {
+            elProfit.textContent = (lucro < 0 ? '-' : '') + formatBRL(lucro);
+            if (lucro < 0) {
                 elProfit.parentElement.previousElementSibling.style.color = "var(--danger)";
                 elProfit.style.color = "var(--danger)";
-                // Aviso de saldo negativo existente no banco
-                if (typeof Toast !== 'undefined') {
-                    const warnKey = 'balance-negative-warned';
-                    if (!sessionStorage.getItem(warnKey)) {
-                        Toast.show('⚠️ Atenção: O saldo da conta está negativo! Verifique as transações existentes.', 'error');
-                        sessionStorage.setItem(warnKey, '1');
-                    }
-                }
             } else {
                 elProfit.parentElement.previousElementSibling.style.color = "var(--primary)";
                 elProfit.style.color = "var(--text-main)";
-                sessionStorage.removeItem('balance-negative-warned');
             }
         }
 
         const elInvest = document.getElementById('stat-trans-invest');
         if (elInvest) {
-            elInvest.textContent = (investReal < 0 ? '-' : '') + formatBRL(investReal);
-            if (investReal < 0) {
-                elInvest.parentElement.previousElementSibling.style.color = "var(--danger)";
-                elInvest.style.color = "var(--danger)";
-            } else {
-                elInvest.parentElement.previousElementSibling.style.color = "#8b5cf6";
-                elInvest.style.color = "var(--text-main)";
-            }
+            elInvest.textContent = formatBRL(investReal);
+            // Always non-negative, so always use purple color
+            elInvest.parentElement.previousElementSibling.style.color = "#8b5cf6";
+            elInvest.style.color = "var(--text-main)";
         }
 
         Transactions.renderChart(filtered);

@@ -51,9 +51,10 @@ const Inventory = {
         <td><span class="tag">${prod.color || '—'}</span></td>
         <td><span class="${qtdClass}">${prod.qtd} uni.</span></td>
         <td>
-          <button class="btn-icon edit"  onclick="Inventory.openEditModal('${prod.id}')"   title="Editar Produto"><i class='bx bx-pencil'></i></button>
-          <button class="btn-icon sell"  onclick="Inventory.openSellModal('${prod.id}')"   title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
-          <button class="btn-icon delete" onclick="Inventory.deleteProduct('${prod.id}')"  title="Remover do Sistema"><i class='bx bx-trash'></i></button>
+          <button class="btn-icon edit"    onclick="Inventory.openEditModal('${prod.id}')"    title="Editar Produto"><i class='bx bx-pencil'></i></button>
+          <button class="btn-icon sell"    onclick="Inventory.openSellModal('${prod.id}')"    title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
+          <button class="btn-icon reserve" onclick="Inventory.openReserveModal('${prod.id}')" title="Criar Reserva"><i class='bx bx-bookmark'></i></button>
+          <button class="btn-icon delete"  onclick="Inventory.deleteProduct('${prod.id}')"   title="Remover do Sistema"><i class='bx bx-trash'></i></button>
         </td>
       `;
       fragment.appendChild(tr);
@@ -206,6 +207,26 @@ const Inventory = {
   updateProduct: async (id, data) => {
     const { error } = await AppSupabase.from('inventory').update(data).eq('id', id);
     if (!error) {
+      // Always propagate current name to sales and reservations (SECURITY DEFINER bypasses RLS)
+      const { error: rpcError } = await AppSupabase.rpc('propagate_product_name', {
+        p_product_id: id,
+        p_new_name: data.name
+      });
+
+      if (rpcError) {
+        console.warn('Erro ao propagar nome via RPC:', rpcError);
+      } else {
+        // Refresh Sales and Reservations lists if already loaded
+        if (typeof Sales !== 'undefined' && Sales.load) {
+          await Sales.load();
+          Sales.render();
+        }
+        if (typeof Reservations !== 'undefined' && Reservations.load) {
+          await Reservations.load();
+          Reservations.render();
+        }
+      }
+
       await Inventory.load();
       Inventory.render();
       Toast.show('Produto atualizado com sucesso!', 'success');
@@ -253,6 +274,15 @@ const Inventory = {
       Sales.openSellModal(id);
     } else {
       Toast.show('Módulo de vendas está sendo construído...', 'warning');
+    }
+  },
+
+  // Encaminha para o módulo reservations.js
+  openReserveModal: (id) => {
+    if (typeof Reservations !== 'undefined') {
+      Reservations.openReserveModal(id);
+    } else {
+      Toast.show('Módulo de reservas está sendo construído...', 'warning');
     }
   }
 };

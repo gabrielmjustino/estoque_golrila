@@ -64,6 +64,7 @@
             (Entradas)</a></li>
         <li><a href="#" data-target="sold-view" id="nav-sold" class="nav-item"><i class='bx bx-cart'></i> Saídas
             (Vendidos)</a></li>
+        <li><a href="#" data-target="reservations-view" id="nav-reservations" class="nav-item"><i class='bx bx-bookmark'></i> Reservas</a></li>
         <li><a href="#" data-target="transactions-view" id="nav-transactions" class="nav-item"><i
               class='bx bx-transfer'></i> Transações</a>
         </li>
@@ -292,51 +293,6 @@
             </div>
           </div>
 
-          <!-- Stats de Saídas -->
-          <div class="dashboard-stats mt-4" id="sold-stats-row">
-            <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class='bx bx-cart-download'></i></div>
-              <div class="stat-details">
-                <h3 id="sold-stat-total-ops">0</h3>
-                <p>Vendas Realizadas</p>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i class='bx bx-shopping-bag'></i></div>
-              <div class="stat-details">
-                <h3 id="sold-stat-total-units">0</h3>
-                <p>Unidades Vendidas</p>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class='bx bx-star'></i></div>
-              <div class="stat-details">
-                <h3 id="sold-stat-top-product">—</h3>
-                <p>Produto Mais Vendido</p>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);"><i class='bx bx-package'></i></div>
-              <div class="stat-details">
-                <h3 id="sold-stat-unique-products">0</h3>
-                <p>Produtos Diferentes</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Ranking de Quantidade por Produto -->
-          <div class="card mt-4" id="sold-ranking-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-              <h3 style="font-size: 1.05rem; color: var(--text-main); margin: 0;"><i class='bx bx-bar-chart-alt-2' style="color: var(--primary); margin-right: 6px;"></i>Qtd. Vendida por Produto</h3>
-              <span id="sold-ranking-subtitle" style="font-size: 0.8rem; color: var(--text-muted);"></span>
-            </div>
-            <div id="sold-ranking-list" style="display: flex; flex-direction: column; gap: 0.6rem;">
-              <!-- JS populate -->
-            </div>
-          </div>
-
-
-
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="sold-table">
@@ -344,10 +300,12 @@
                   <tr>
                     <th>Data/Hora</th>
                     <th>Produto</th>
+                    <th>Tamanho</th>
                     <th>Qtd. Vendida</th>
                     <th>Pagamento</th>
                     <th>Comprador (Cliente)</th>
                     <th>Vendedor (Operador)</th>
+                    <th>Personalização</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -359,6 +317,41 @@
           </div>
         </div>
 
+        <!-- ========== RESERVATIONS VIEW ========== -->
+        <div id="reservations-view" class="sub-view">
+          <div class="view-header">
+            <div>
+              <h2>Reservas de Produtos</h2>
+              <p class="text-muted">Gerencie as reservas de clientes. Confirme como venda para registrar no financeiro.</p>
+            </div>
+          </div>
+
+          <!-- Summary chips: populated by Reservations.renderSummary() -->
+          <div id="reservations-summary" class="reservations-summary mt-4"></div>
+
+          <div class="card mt-4">
+            <div class="table-responsive">
+              <table class="data-table" id="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Tamanho</th>
+                    <th>Qtd.</th>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th>Personalização</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="reservations-tbody">
+                  <!-- JS populate -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
         <!-- ========== TRANSACTIONS VIEW ========== -->
         <div id="transactions-view" class="sub-view">
@@ -410,6 +403,37 @@
               <div class="stat-details">
                 <h3 id="stat-trans-invest">R$ 0,00</h3>
                 <p>Investimento Restante</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== VALOR DA CONTA ===== -->
+          <div class="card mt-4 conta-card">
+            <div class="conta-card-header">
+              <div class="conta-card-title">
+                <div class="conta-icon"><i class='bx bx-credit-card'></i></div>
+                <div>
+                  <span class="conta-label">Valor da Conta</span>
+                  <span class="conta-subtitle">Entradas menos Saídas no período</span>
+                </div>
+              </div>
+              <div class="conta-value-wrap">
+                <span id="stat-conta-balance" class="conta-value">R$ 0,00</span>
+              </div>
+            </div>
+            <div class="conta-card-controls">
+              <div class="conta-date-group">
+                <label for="conta-start-date"><i class='bx bx-calendar'></i> Data de Início</label>
+                <input type="date" id="conta-start-date" class="conta-date-input">
+              </div>
+              <div class="conta-date-group">
+                <label><i class='bx bx-calendar-check'></i> Data Final</label>
+                <div class="conta-date-fixed">Hoje (<span id="conta-end-date-label"></span>)</div>
+              </div>
+              <div class="conta-breakdown">
+                <span class="conta-breakdown-item in"><i class='bx bx-plus-circle'></i> Entradas: <strong id="conta-in-label">R$ 0,00</strong></span>
+                <span class="conta-breakdown-sep">—</span>
+                <span class="conta-breakdown-item out"><i class='bx bx-minus-circle'></i> Saídas: <strong id="conta-out-label">R$ 0,00</strong></span>
               </div>
             </div>
           </div>
@@ -535,6 +559,12 @@
           <h3>Registrar Venda - <span id="sell-product-name" style="color:var(--primary)"></span></h3>
           <span class="close-modal" id="close-sell-modal">&times;</span>
         </div>
+        <div style="padding: 0.25rem 0 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Tamanho:</span>
+          <span id="sell-product-size" class="tag" style="font-size: 0.85rem;">—</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">Cor:</span>
+          <span id="sell-product-color" class="tag" style="font-size: 0.85rem;">—</span>
+        </div>
         <form id="form-sell-product">
           <input type="hidden" id="sell-product-id">
           <div class="form-grid">
@@ -564,6 +594,14 @@
                 <option value="Boleto / Prazo">Boleto / Prazo 📄</option>
               </select>
             </div>
+            <div class="input-group" style="grid-column: span 2;">
+              <label>Personalização</label>
+              <div class="personalization-toggle" id="sell-personalization-toggle">
+                <button type="button" class="toggle-btn active" id="sell-pers-no" data-value="no">Não</button>
+                <button type="button" class="toggle-btn" id="sell-pers-yes" data-value="yes">Sim</button>
+              </div>
+              <input type="text" id="sell-personalization-text" class="personalization-input" placeholder="Descreva a personalização..." style="display:none; margin-top: 0.5rem;">
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn-secondary" id="cancel-sell-modal">Cancelar</button>
@@ -571,6 +609,55 @@
           </div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Reserve Product -->
+  <div id="modal-reserve-product" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Criar Reserva — <span id="reserve-product-name" style="color:var(--primary)"></span></h3>
+        <span class="close-modal" id="close-reserve-modal">&times;</span>
+      </div>
+      <div style="padding: 0.25rem 0 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Tamanho:</span>
+        <span id="reserve-product-size" class="tag" style="font-size: 0.85rem;">—</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">Cor:</span>
+        <span id="reserve-product-color" class="tag" style="font-size: 0.85rem;">—</span>
+      </div>
+      <form id="form-reserve-product">
+        <input type="hidden" id="reserve-product-id">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Nome do Cliente</label>
+            <input type="text" id="reserve-customer-name" placeholder="Nome completo" required>
+          </div>
+          <div class="input-group">
+            <label>Telefone / WhatsApp</label>
+            <input type="tel" id="reserve-customer-phone" placeholder="(00) 00000-0000">
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Endereço</label>
+            <input type="text" id="reserve-customer-address" placeholder="Rua, número, bairro...">
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Quantidade a Reservar (<span id="reserve-product-max"></span>)</label>
+            <input type="number" id="reserve-qtd" min="1" required>
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Personalização</label>
+            <div class="personalization-toggle" id="reserve-personalization-toggle">
+              <button type="button" class="toggle-btn active" id="reserve-pers-no" data-value="no">Não</button>
+              <button type="button" class="toggle-btn" id="reserve-pers-yes" data-value="yes">Sim</button>
+            </div>
+            <input type="text" id="reserve-personalization-text" class="personalization-input" placeholder="Descreva a personalização..." style="display:none; margin-top: 0.5rem;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancel-reserve-modal">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: rgba(252,191,0,0.85); color: #111;">Confirmar Reserva</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -582,6 +669,7 @@
   <script src="js/app.js"></script>
   <script src="js/inventory.js"></script>
   <script src="js/sales.js"></script>
+  <script src="js/reservations.js"></script>
   <script src="js/transactions.js"></script>
   <script src="js/admin.js"></script>
 </body>

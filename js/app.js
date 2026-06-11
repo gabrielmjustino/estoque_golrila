@@ -121,6 +121,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (targetId === 'sold-view' && typeof Sales !== 'undefined') {
           Sales.load().then(() => Sales.render());
         }
+        if (targetId === 'reservations-view' && typeof Reservations !== 'undefined') {
+          Reservations.load().then(() => Reservations.render());
+        }
       }
     });
   });
@@ -137,6 +140,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (payload.table === 'sales' && typeof Sales !== 'undefined') {
           Sales.load().then(() => Sales.render());
+        }
+        if (payload.table === 'reservations' && typeof Reservations !== 'undefined') {
+          Reservations.load().then(() => Reservations.render());
         }
       })
       .subscribe();
@@ -170,14 +176,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Remove abas de transações e saídas
       const navSold = document.getElementById('nav-sold');
       const navTransactions = document.getElementById('nav-transactions');
+      const navReservations = document.getElementById('nav-reservations');
       if (navSold) navSold.parentElement.style.display = 'none';
       if (navTransactions) navTransactions.parentElement.style.display = 'none';
+      if (navReservations) navReservations.parentElement.style.display = 'none';
     }
 
-    // Inicializa Módulos em paralelo (Inventory + Sales ao mesmo tempo)
+    // Inicializa Módulos em paralelo (Inventory + Sales + Reservations ao mesmo tempo)
     const initTasks = [];
     if (typeof Inventory !== 'undefined') initTasks.push(Inventory.init());
     if (typeof Sales !== 'undefined') initTasks.push(Sales.init());
+    if (typeof Reservations !== 'undefined') initTasks.push(Reservations.init());
     if (typeof Transactions !== 'undefined') initTasks.push(Transactions.init());
     await Promise.all(initTasks);
 

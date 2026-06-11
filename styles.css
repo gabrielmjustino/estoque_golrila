@@ -486,6 +486,11 @@ body {
   color: var(--success);
 }
 
+.btn-icon.reserve:hover {
+  color: var(--primary);
+  background: rgba(252, 191, 0, 0.12);
+}
+
 .btn-icon.edit:hover {
   color: #60a5fa;
 }
@@ -864,4 +869,418 @@ body {
 .form-select:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+/* -------------------- RESERVATIONS SUMMARY CHIPS -------------------- */
+.reservations-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* --- Global stat cards (CAMISAS / CLIENTES) --- */
+.res-global-card {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-light) 100%);
+  border: 1px solid rgba(252,191,0,0.25);
+  border-radius: 14px;
+  padding: 1rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 170px;
+  flex: 0 0 auto;
+  box-shadow: 0 4px 16px rgba(252,191,0,0.08);
+  animation: chipIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.res-global-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(252,191,0,0.15);
+}
+
+.res-global-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.res-global-icon.shirts {
+  background: rgba(252,191,0,0.15);
+  color: var(--primary);
+  border: 1px solid rgba(252,191,0,0.3);
+}
+
+.res-global-icon.clients {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.3);
+}
+
+.res-global-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.res-global-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.res-global-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Vertical divider between global cards and per-product chips */
+.res-summary-divider {
+  width: 1px;
+  height: 60px;
+  background: var(--border-color);
+  flex-shrink: 0;
+  border-radius: 1px;
+  align-self: center;
+}
+
+.res-chip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: chipIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.res-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.85) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);    }
+}
+
+.res-chip-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  background: rgba(252,191,0,0.12);
+  color: var(--primary);
+  border: 1px solid rgba(252,191,0,0.25);
+}
+
+.res-chip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.res-chip-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-chip-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-chip-stats {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.res-chip-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+.res-chip-badge.units {
+  background: rgba(252,191,0,0.12);
+  color: var(--primary);
+  border-color: rgba(252,191,0,0.3);
+}
+
+.res-chip-badge.clients {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.3);
+}
+
+@media (max-width: 768px) {
+  .res-chip {
+    min-width: calc(50% - 0.5rem);
+    max-width: none;
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+}
+
+/* -------------------- PERSONALIZATION TOGGLE -------------------- */
+.personalization-toggle {
+  display: inline-flex;
+  background: var(--bg-surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  gap: 0;
+}
+
+.personalization-toggle .toggle-btn {
+  padding: 0.55rem 1.4rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.personalization-toggle .toggle-btn:first-child {
+  border-right: 1px solid var(--border-color);
+}
+
+.personalization-toggle .toggle-btn.active {
+  background: rgba(252, 191, 0, 0.15);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.personalization-toggle .toggle-btn:hover:not(.active) {
+  background: var(--bg-surface);
+  color: var(--text-main);
+}
+
+.personalization-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface-light);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  animation: fadeIn 0.2s ease;
+}
+
+.personalization-input:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.personalization-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* -------------------- VALOR DA CONTA CARD -------------------- */
+.conta-card {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(59, 130, 246, 0.05) 100%);
+  transition: box-shadow 0.2s;
+}
+
+.conta-card:hover {
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+}
+
+.conta-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.conta-card-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.conta-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.conta-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.conta-subtitle {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.conta-value-wrap {
+  text-align: right;
+}
+
+.conta-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  transition: color 0.3s;
+}
+
+.conta-value.positive {
+  color: var(--success);
+}
+
+.conta-value.negative {
+  color: var(--danger);
+}
+
+.conta-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.conta-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conta-date-group label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.conta-date-input {
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-surface-light);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.conta-date-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.conta-date-fixed {
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.conta-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.conta-breakdown-item {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.conta-breakdown-item.in i { color: var(--success); }
+.conta-breakdown-item.out i { color: var(--danger); }
+
+.conta-breakdown-item strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.conta-breakdown-sep {
+  color: var(--border-color);
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .conta-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .conta-value {
+    font-size: 1.7rem;
+  }
+  .conta-card-controls {
+    gap: 1rem;
+  }
+  .conta-breakdown {
+    margin-left: 0;
+    width: 100%;
+  }
 }
