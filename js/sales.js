@@ -24,6 +24,7 @@ const Sales = {
 
     if (Sales.history.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma venda registrada até o momento.</td></tr>`;
+      Sales.renderStats();
       return;
     }
 
@@ -67,7 +68,85 @@ const Sales = {
     });
 
     tbody.appendChild(fragment);
+    Sales.renderStats();
   },
+
+  renderStats: () => {
+    const history = Sales.history;
+
+    // Cards de resumo
+    const elTotalOps = document.getElementById('sold-stat-total-ops');
+    const elTotalUnits = document.getElementById('sold-stat-total-units');
+    const elTopProduct = document.getElementById('sold-stat-top-product');
+    const elUniqueProducts = document.getElementById('sold-stat-unique-products');
+
+    const totalOps = history.length;
+    const totalUnits = history.reduce((sum, s) => sum + (parseInt(s.qtd_sold) || 0), 0);
+
+    // Agrupa por nome de produto
+    const productMap = {};
+    history.forEach(s => {
+      const name = s.product_name || 'Desconhecido';
+      productMap[name] = (productMap[name] || 0) + (parseInt(s.qtd_sold) || 0);
+    });
+
+    const productEntries = Object.entries(productMap).sort((a, b) => b[1] - a[1]);
+    const uniqueCount = productEntries.length;
+    const topName = productEntries.length > 0 ? productEntries[0][0] : '—';
+
+    if (elTotalOps) elTotalOps.textContent = totalOps;
+    if (elTotalUnits) elTotalUnits.textContent = totalUnits;
+    if (elUniqueProducts) elUniqueProducts.textContent = uniqueCount;
+    if (elTopProduct) {
+      // Trunca nome longo para caber no card
+      elTopProduct.textContent = topName.length > 18 ? topName.substring(0, 16) + '…' : topName;
+      elTopProduct.title = topName;
+    }
+
+    // Subtitle do ranking
+    const subtitleEl = document.getElementById('sold-ranking-subtitle');
+    if (subtitleEl) subtitleEl.textContent = `${uniqueCount} produto${uniqueCount !== 1 ? 's' : ''} · ${totalUnits} unidades no total`;
+
+    // Ranking list
+    const rankingList = document.getElementById('sold-ranking-list');
+    if (!rankingList) return;
+
+    if (productEntries.length === 0) {
+      rankingList.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 1rem 0;">Nenhuma venda registrada.</p>`;
+      return;
+    }
+
+    const maxQtd = productEntries[0][1];
+
+    rankingList.innerHTML = productEntries.map(([name, qty], index) => {
+      const pct = maxQtd > 0 ? Math.round((qty / maxQtd) * 100) : 0;
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span style="color:var(--text-muted); font-size:0.85rem;">#${index + 1}</span>`;
+      const barColor = index === 0
+        ? 'var(--primary)'
+        : index === 1
+          ? 'var(--success)'
+          : index === 2
+            ? 'var(--warning)'
+            : 'var(--text-muted)';
+
+      return `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 2rem; text-align: center; flex-shrink: 0;">${medal}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+              <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;" title="${name}">${name}</span>
+              <span style="font-size: 0.9rem; font-weight: 700; color: ${barColor}; flex-shrink: 0;">${qty} uni.</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.07); border-radius: 99px; height: 6px; overflow: hidden;">
+              <div style="width: ${pct}%; height: 100%; background: ${barColor}; border-radius: 99px; transition: width 0.5s ease;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+
 
   setupEventListeners: () => {
     const modalSell = document.getElementById('modal-sell-product');
@@ -208,6 +287,21 @@ const Sales = {
     if (isNaN(totalPrice) || totalPrice <= 0) {
       Toast.show('Por favor, defina um valor total válido para a venda.', 'warning');
       return;
+    }
+
+    // Valida se o saldo da conta suporta registrar esta venda como entrada positiva
+    // Nota: vendas sempre geram uma transação POSITIVA (entrada de dinheiro),
+    // portanto não reduzem o saldo. Porém, se já existem transações negativas que
+    // deixaram o saldo negativo no banco, avisamos o administrador.
+    if (typeof Transactions !== 'undefined' && Transactions.transactionsList.length > 0) {
+      const currentBalance = Transactions.transactionsList.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      if (currentBalance < 0) {
+        Toast.show(
+          `Atenção: O saldo da conta está negativo (${currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}). Revise as transações antes de continuar.`,
+          'warning'
+        );
+        // Apenas avisa, não bloqueia a venda (venda é sempre uma entrada)
+      }
     }
 
     // Capture product name BEFORE any async reload (avoids stale index bug)

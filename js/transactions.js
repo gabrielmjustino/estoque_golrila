@@ -45,12 +45,25 @@ const Transactions = {
                 const dateStr = document.getElementById('add-transaction-date').value;
                 const description = document.getElementById('add-transaction-description').value;
 
-                if (isNaN(rawAmount)) {
-                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido.', 'warning');
+                if (isNaN(rawAmount) || rawAmount <= 0) {
+                    if (typeof Toast !== 'undefined') Toast.show('Valor inválido. Informe um valor maior que zero.', 'warning');
                     return;
                 }
 
                 const amount = transType === 'out' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+                // Valida se o saldo ficaria negativo para saídas manuais
+                if (transType === 'out') {
+                    const currentBalance = Transactions.transactionsList.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                    const balanceAfter = currentBalance + amount; // amount já é negativo
+                    if (balanceAfter < 0) {
+                        if (typeof Toast !== 'undefined') Toast.show(
+                            `Saldo insuficiente! Saldo atual: ${currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. Esta saída deixaria a conta negativa.`,
+                            'error'
+                        );
+                        return;
+                    }
+                }
 
                 // Get current user name
                 const currentUser = Auth.getCurrentUser();
@@ -131,11 +144,13 @@ const Transactions = {
 
     renderDashboard: () => {
         const filtered = Transactions.filterByPeriod(Transactions.transactionsList);
+        const allTransactions = Transactions.transactionsList; // Saldo real usa TODAS as transações
 
         let totalIn = 0;
         let totalOut = 0;
         let totalInvest = 0;
 
+        // Entradas/Saídas do período selecionado
         filtered.forEach(t => {
             if (t.trans_type === 'invest') {
                 totalInvest += parseFloat(t.amount);
@@ -148,7 +163,12 @@ const Transactions = {
         });
 
         const faturamento = totalIn;
-        const lucro = totalIn + totalOut; // out is already negative
+
+        // Saldo real da conta: soma acumulativa de TODAS as transações (histórico completo)
+        // O saldo é sempre acumulativo - não pode ser filtrado por período
+        const saldoReal = allTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+        // Saldo do investimento baseado no período
         const investReal = totalInvest + totalOut;
 
         const formatBRL = (val) => Math.abs(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -159,13 +179,22 @@ const Transactions = {
 
         const elProfit = document.getElementById('stat-trans-profit');
         if (elProfit) {
-            elProfit.textContent = (lucro < 0 ? '-' : '') + formatBRL(lucro);
-            if (lucro < 0) {
+            elProfit.textContent = (saldoReal < 0 ? '-' : '') + formatBRL(saldoReal);
+            if (saldoReal < 0) {
                 elProfit.parentElement.previousElementSibling.style.color = "var(--danger)";
                 elProfit.style.color = "var(--danger)";
+                // Aviso de saldo negativo existente no banco
+                if (typeof Toast !== 'undefined') {
+                    const warnKey = 'balance-negative-warned';
+                    if (!sessionStorage.getItem(warnKey)) {
+                        Toast.show('⚠️ Atenção: O saldo da conta está negativo! Verifique as transações existentes.', 'error');
+                        sessionStorage.setItem(warnKey, '1');
+                    }
+                }
             } else {
                 elProfit.parentElement.previousElementSibling.style.color = "var(--primary)";
                 elProfit.style.color = "var(--text-main)";
+                sessionStorage.removeItem('balance-negative-warned');
             }
         }
 
