@@ -83,14 +83,28 @@ const Sales = {
     const totalOps = history.length;
     const totalUnits = history.reduce((sum, s) => sum + (parseInt(s.qtd_sold) || 0), 0);
 
-    // Agrupa por nome de produto
+    // Mapa de product_id -> size usando Inventory (já em memória)
+    const inventoryMap = {};
+    if (typeof Inventory !== 'undefined' && Inventory.products) {
+      Inventory.products.forEach(p => { inventoryMap[p.id] = p.size || null; });
+    }
+
+    // Agrupa por nome de produto -> { total, sizes: { tamanho: qty } }
     const productMap = {};
     history.forEach(s => {
       const name = s.product_name || 'Desconhecido';
-      productMap[name] = (productMap[name] || 0) + (parseInt(s.qtd_sold) || 0);
+      const qty = parseInt(s.qtd_sold) || 0;
+      const size = inventoryMap[s.product_id] || null;
+
+      if (!productMap[name]) productMap[name] = { total: 0, sizes: {} };
+      productMap[name].total += qty;
+
+      if (size) {
+        productMap[name].sizes[size] = (productMap[name].sizes[size] || 0) + qty;
+      }
     });
 
-    const productEntries = Object.entries(productMap).sort((a, b) => b[1] - a[1]);
+    const productEntries = Object.entries(productMap).sort((a, b) => b[1].total - a[1].total);
     const uniqueCount = productEntries.length;
     const topName = productEntries.length > 0 ? productEntries[0][0] : '—';
 
@@ -98,7 +112,6 @@ const Sales = {
     if (elTotalUnits) elTotalUnits.textContent = totalUnits;
     if (elUniqueProducts) elUniqueProducts.textContent = uniqueCount;
     if (elTopProduct) {
-      // Trunca nome longo para caber no card
       elTopProduct.textContent = topName.length > 18 ? topName.substring(0, 16) + '…' : topName;
       elTopProduct.title = topName;
     }
@@ -116,22 +129,54 @@ const Sales = {
       return;
     }
 
-    const maxQtd = productEntries[0][1];
+    const maxQtd = productEntries[0][1].total;
 
-    rankingList.innerHTML = productEntries.map(([name, qty], index) => {
+    rankingList.innerHTML = productEntries.map(([name, data], index) => {
+      const qty = data.total;
+      const sizes = data.sizes;
       const pct = maxQtd > 0 ? Math.round((qty / maxQtd) * 100) : 0;
-      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span style="color:var(--text-muted); font-size:0.85rem;">#${index + 1}</span>`;
-      const barColor = index === 0
-        ? 'var(--primary)'
-        : index === 1
-          ? 'var(--success)'
-          : index === 2
-            ? 'var(--warning)'
+
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉'
+        : `<span style="color:var(--text-muted); font-size:0.85rem;">#${index + 1}</span>`;
+
+      const barColor = index === 0 ? 'var(--primary)'
+        : index === 1 ? 'var(--success)'
+          : index === 2 ? 'var(--warning)'
             : 'var(--text-muted)';
 
+      // Chips de tamanho ordenados (P, M, G, GG, XG, Único, outros)
+      const sizeOrder = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XGG', 'Único'];
+      const sizeEntries = Object.entries(sizes).sort((a, b) => {
+        const ai = sizeOrder.indexOf(a[0]);
+        const bi = sizeOrder.indexOf(b[0]);
+        if (ai === -1 && bi === -1) return a[0].localeCompare(b[0]);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      const sizeChipsHtml = sizeEntries.length > 0
+        ? `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 6px;">
+            ${sizeEntries.map(([sz, sqty]) => `
+              <span style="
+                display: inline-flex; align-items: center; gap: 4px;
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.12);
+                border-radius: 6px;
+                padding: 2px 8px;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+              ">
+                <span style="font-weight: 600; color: ${barColor};">${sz}</span>
+                <span>· ${sqty} uni.</span>
+              </span>
+            `).join('')}
+           </div>`
+        : '';
+
       return `
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="width: 2rem; text-align: center; flex-shrink: 0;">${medal}</div>
+        <div style="display: flex; align-items: flex-start; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <div style="width: 2rem; text-align: center; flex-shrink: 0; padding-top: 2px;">${medal}</div>
           <div style="flex: 1; min-width: 0;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
               <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;" title="${name}">${name}</span>
@@ -140,6 +185,7 @@ const Sales = {
             <div style="background: rgba(255,255,255,0.07); border-radius: 99px; height: 6px; overflow: hidden;">
               <div style="width: ${pct}%; height: 100%; background: ${barColor}; border-radius: 99px; transition: width 0.5s ease;"></div>
             </div>
+            ${sizeChipsHtml}
           </div>
         </div>
       `;
