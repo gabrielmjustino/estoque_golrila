@@ -200,9 +200,6 @@ const Transactions = {
         });
         const balance = totalBalanceIn + totalBalanceOut;
 
-        // Garante que o saldo nunca seja exibido como negativo por inconsistência de dados
-        const displayBalance = Math.max(0, balance);
-
         // Breakdown por período (para os labels de entradas/saídas)
         const periodRelevant = allRelevant.filter(t => {
             if (!startDate) return true;
@@ -223,7 +220,7 @@ const Transactions = {
         if (elIn) elIn.textContent = formatBRL(totalIn);
         if (elOut) elOut.textContent = formatBRL(totalOut);
 
-        elBalance.textContent = formatBRL(displayBalance);
+        elBalance.textContent = (balance < 0 ? '-' : '') + formatBRL(balance);
         elBalance.className = 'conta-value ' + (balance < 0 ? 'negative' : balance > 0 ? 'positive' : '');
     },
 
