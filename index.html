@@ -372,6 +372,28 @@
           <!-- Summary chips: populated by Reservations.renderSummary() -->
           <div id="reservations-summary" class="reservations-summary mt-4"></div>
 
+          <!-- Barra de filtros -->
+          <div class="res-filter-bar mt-4">
+            <div class="res-filter-group">
+              <i class='bx bx-package'></i>
+              <select id="res-filter-product" class="form-select res-filter-select">
+                <option value="">Todos os Produtos</option>
+              </select>
+            </div>
+            <div class="res-filter-group">
+              <i class='bx bx-credit-card'></i>
+              <select id="res-filter-payment" class="form-select res-filter-select">
+                <option value="">Todos os Status</option>
+                <option value="unpaid">❌ Não Pago</option>
+                <option value="partial">⏳ Parcialmente Pago</option>
+                <option value="paid">✅ Pago</option>
+              </select>
+            </div>
+            <button class="res-filter-clear" id="res-filter-clear" title="Limpar filtros">
+              <i class='bx bx-x'></i> Limpar
+            </button>
+          </div>
+
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="reservations-table">
@@ -385,6 +407,7 @@
                     <th>Telefone</th>
                     <th>Endereço</th>
                     <th>Personalização</th>
+                    <th>Pagamento</th>
                     <th>Ações</th>
                   </tr>
                 </thead>

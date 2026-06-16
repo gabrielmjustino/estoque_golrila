@@ -1284,3 +1284,119 @@ body {
     width: 100%;
   }
 }
+
+/* -------------------- RESERVATIONS FILTER BAR -------------------- */
+.res-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.res-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  transition: border-color 0.2s;
+}
+
+.res-filter-group:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(252,191,0,0.15);
+}
+
+.res-filter-group i {
+  color: var(--text-muted);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.res-filter-select {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  min-width: 160px;
+}
+
+.res-filter-select option {
+  background: var(--bg-surface-light);
+  color: var(--text-main);
+}
+
+.res-filter-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.res-filter-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(239,68,68,0.08);
+}
+
+/* -------------------- PAYMENT STATUS BADGE -------------------- */
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.payment-badge:hover {
+  filter: brightness(1.15);
+  transform: scale(1.04);
+}
+
+.payment-badge.unpaid {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  border-color: rgba(239,68,68,0.35);
+}
+
+.payment-badge.partial {
+  background: rgba(245,158,11,0.12);
+  color: #fbbf24;
+  border-color: rgba(245,158,11,0.35);
+}
+
+.payment-badge.paid {
+  background: rgba(16,185,129,0.12);
+  color: #34d399;
+  border-color: rgba(16,185,129,0.35);
+}
+
+@media (max-width: 768px) {
+  .res-filter-bar {
+    gap: 0.5rem;
+  }
+  .res-filter-select {
+    min-width: 120px;
+  }
+}

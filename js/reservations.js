@@ -1,11 +1,20 @@
 // Gerenciador da aba de Reservas
 const Reservations = {
   list: [],
+  _filterProduct: '',
+  _filterPayment: '',
+
+  _paymentLabel: (status) => {
+    if (status === 'paid')    return { cls: 'paid',    icon: 'bx-check-circle', text: 'Pago' };
+    if (status === 'partial') return { cls: 'partial', icon: 'bx-time-five',    text: 'Parcial' };
+    return                           { cls: 'unpaid',  icon: 'bx-x-circle',     text: 'Não Pago' };
+  },
 
   init: async () => {
     await Reservations.load();
     Reservations.render();
     Reservations.setupEventListeners();
+    Reservations.setupFilters();
   },
 
   load: async () => {
@@ -98,16 +107,25 @@ const Reservations = {
     if (!tbody) return;
 
     Reservations.renderSummary();
+    Reservations._populateProductFilter();
     tbody.innerHTML = '';
 
-    if (Reservations.list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva registrada até o momento.</td></tr>`;
+    let filtered = Reservations.list;
+    if (Reservations._filterProduct) {
+      filtered = filtered.filter(r => r.product_name === Reservations._filterProduct);
+    }
+    if (Reservations._filterPayment) {
+      filtered = filtered.filter(r => (r.payment_status || 'unpaid') === Reservations._filterPayment);
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva encontrada com os filtros selecionados.</td></tr>`;
       return;
     }
 
     const fragment = document.createDocumentFragment();
 
-    Reservations.list.forEach(res => {
+    filtered.forEach(res => {
       let formattedDate = '—';
       if (res.created_at) {
         const d = new Date(res.created_at);
@@ -123,6 +141,9 @@ const Reservations = {
         ? `<span class="tag" style="background: rgba(139,92,246,0.15); color: #a78bfa; border-color: rgba(139,92,246,0.3); max-width: 140px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${res.personalization}"><i class='bx bx-brush' style="font-size:0.7rem; vertical-align:middle;"></i> ${res.personalization}</span>`
         : `<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>`;
 
+      const pInfo = Reservations._paymentLabel(res.payment_status);
+      const paymentHtml = `<button class="payment-badge ${pInfo.cls}" onclick="Reservations.cyclePaymentStatus('${res.id}')" title="Clique para alterar o status de pagamento"><i class='bx ${pInfo.icon}'></i> ${pInfo.text}</button>`;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
@@ -133,6 +154,7 @@ const Reservations = {
         <td style="color: var(--text-muted); font-size: 0.85rem;">${res.customer_phone || '—'}</td>
         <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${res.customer_address || ''}">${res.customer_address || '—'}</td>
         <td>${personalizationHtml}</td>
+        <td>${paymentHtml}</td>
         <td>
           <button class="btn-icon" onclick="Reservations.downloadDoc('${res.id}')" title="Baixar Documento da Reserva" style="color: var(--info); border-color: rgba(59,130,246,0.3);"><i class='bx bx-file-blank'></i></button>
           <button class="btn-icon sell" onclick="Reservations.confirmToSale('${res.id}')" title="Confirmar Venda e Mover para Saídas"><i class='bx bx-check-circle'></i></button>
@@ -143,6 +165,44 @@ const Reservations = {
     });
 
     tbody.appendChild(fragment);
+  },
+
+  _populateProductFilter: () => {
+    const sel = document.getElementById('res-filter-product');
+    if (!sel) return;
+    const current = sel.value;
+    const names = [...new Set(Reservations.list.map(r => r.product_name).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todos os Produtos</option>' +
+      names.map(n => `<option value="${n}" ${n === current ? 'selected' : ''}>${n}</option>`).join('');
+  },
+
+  setupFilters: () => {
+    const selProduct = document.getElementById('res-filter-product');
+    const selPayment = document.getElementById('res-filter-payment');
+    const btnClear   = document.getElementById('res-filter-clear');
+    if (selProduct) selProduct.addEventListener('change', e => { Reservations._filterProduct = e.target.value; Reservations.render(); });
+    if (selPayment) selPayment.addEventListener('change', e => { Reservations._filterPayment = e.target.value; Reservations.render(); });
+    if (btnClear) btnClear.addEventListener('click', () => {
+      Reservations._filterProduct = '';
+      Reservations._filterPayment = '';
+      if (selProduct) selProduct.value = '';
+      if (selPayment) selPayment.value = '';
+      Reservations.render();
+    });
+  },
+
+  cyclePaymentStatus: async (reservationId) => {
+    const res = Reservations.list.find(r => r.id === reservationId);
+    if (!res) return;
+    const cycle = { unpaid: 'partial', partial: 'paid', paid: 'unpaid' };
+    const current = res.payment_status || 'unpaid';
+    const next = cycle[current];
+    const { error } = await AppSupabase.from('reservations').update({ payment_status: next }).eq('id', reservationId);
+    if (error) { Toast.show('Erro ao atualizar status de pagamento.', 'error'); return; }
+    res.payment_status = next;
+    const labels = { unpaid: 'Não Pago', partial: 'Parcialmente Pago', paid: 'Pago' };
+    Toast.show(`Pagamento atualizado: ${labels[next]}`, next === 'paid' ? 'success' : 'info');
+    Reservations.render();
   },
 
   setupEventListeners: () => {
