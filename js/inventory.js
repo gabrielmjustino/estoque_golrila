@@ -10,10 +10,21 @@ const Inventory = {
 
   // Lightweight load — excludes base64 photo to avoid huge payloads
   load: async () => {
-    const { data, error } = await AppSupabase
+    // Try fetching with stock_status; fall back if column doesn't exist yet
+    let { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, photo, created_at')
+      .select('id, name, qtd, size, color, photo, stock_status, created_at')
       .order('created_at', { ascending: false });
+
+    if (error && error.message && error.message.includes('stock_status')) {
+      // Column not yet added — fall back to query without it
+      const fallback = await AppSupabase
+        .from('inventory')
+        .select('id, name, qtd, size, color, photo, created_at')
+        .order('created_at', { ascending: false });
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (!error && data) {
       Inventory.products = data;
