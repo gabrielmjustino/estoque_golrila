@@ -274,6 +274,14 @@
                     <label>Cor</label>
                     <input type="text" id="edit-color" required>
                   </div>
+                  <div class="input-group" style="grid-column: span 2;">
+                    <label>Status de Disponibilidade</label>
+                    <select id="edit-stock-status" class="form-select" style="width:100%;">
+                      <option value="em_estoque">✅ Em Estoque</option>
+                      <option value="aguardando">⏳ Aguardando</option>
+                      <option value="incerto">❓ Incerto</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn-secondary" id="cancel-edit-modal">Cancelar</button>
@@ -407,6 +415,7 @@
                     <th>Telefone</th>
                     <th>Endereço</th>
                     <th>Personalização</th>
+                    <th>Estoque</th>
                     <th>Pagamento</th>
                     <th>Ações</th>
                   </tr>

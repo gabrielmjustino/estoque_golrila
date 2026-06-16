@@ -12,7 +12,7 @@ const Inventory = {
   load: async () => {
     const { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, photo, created_at')
+      .select('id, name, qtd, size, color, photo, stock_status, created_at')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -168,8 +168,9 @@ const Inventory = {
         const qtd = parseInt(document.getElementById('edit-qtd').value);
         const size = document.getElementById('edit-size').value;
         const color = document.getElementById('edit-color').value;
+        const stock_status = document.getElementById('edit-stock-status')?.value || 'em_estoque';
 
-        const updateData = { name, qtd, size, color };
+        const updateData = { name, qtd, size, color, stock_status };
         if (editPhotoBase64 !== null) updateData.photo = editPhotoBase64;
 
         await Inventory.updateProduct(id, updateData);
@@ -188,6 +189,9 @@ const Inventory = {
     document.getElementById('edit-qtd').value = prod.qtd;
     document.getElementById('edit-size').value = prod.size || '';
     document.getElementById('edit-color').value = prod.color || '';
+
+    const stockSel = document.getElementById('edit-stock-status');
+    if (stockSel) stockSel.value = prod.stock_status || 'em_estoque';
 
     document.getElementById('modal-edit-product').classList.add('active');
 

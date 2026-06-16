@@ -10,6 +10,12 @@ const Reservations = {
     return                           { cls: 'unpaid',  icon: 'bx-x-circle',     text: 'Não Pago' };
   },
 
+  _stockLabel: (status) => {
+    if (status === 'aguardando') return { cls: 'stock-waiting',   icon: 'bx-time',         text: 'Aguardando' };
+    if (status === 'incerto')    return { cls: 'stock-uncertain', icon: 'bx-question-mark', text: 'Incerto' };
+    return                              { cls: 'stock-ok',        icon: 'bx-check-shield',  text: 'Em Estoque' };
+  },
+
   init: async () => {
     await Reservations.load();
     Reservations.render();
@@ -119,7 +125,7 @@ const Reservations = {
     }
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva encontrada com os filtros selecionados.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhuma reserva encontrada com os filtros selecionados.</td></tr>`;
       return;
     }
 
@@ -144,6 +150,13 @@ const Reservations = {
       const pInfo = Reservations._paymentLabel(res.payment_status);
       const paymentHtml = `<button class="payment-badge ${pInfo.cls}" onclick="Reservations.cyclePaymentStatus('${res.id}')" title="Clique para alterar o status de pagamento"><i class='bx ${pInfo.icon}'></i> ${pInfo.text}</button>`;
 
+      // Stock status comes from the linked inventory product (read-only)
+      const linkedProduct = (typeof Inventory !== 'undefined')
+        ? Inventory.products.find(p => p.id === res.product_id)
+        : null;
+      const sInfo = Reservations._stockLabel(linkedProduct ? linkedProduct.stock_status : null);
+      const stockHtml = `<span class="stock-badge ${sInfo.cls}"><i class='bx ${sInfo.icon}'></i> ${sInfo.text}</span>`;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
@@ -154,6 +167,7 @@ const Reservations = {
         <td style="color: var(--text-muted); font-size: 0.85rem;">${res.customer_phone || '—'}</td>
         <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${res.customer_address || ''}">${res.customer_address || '—'}</td>
         <td>${personalizationHtml}</td>
+        <td>${stockHtml}</td>
         <td>${paymentHtml}</td>
         <td>
           <button class="btn-icon" onclick="Reservations.downloadDoc('${res.id}')" title="Baixar Documento da Reserva" style="color: var(--info); border-color: rgba(59,130,246,0.3);"><i class='bx bx-file-blank'></i></button>

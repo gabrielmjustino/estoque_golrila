@@ -1400,3 +1400,34 @@ body {
     min-width: 120px;
   }
 }
+
+/* -------------------- STOCK STATUS BADGE (read-only) -------------------- */
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+
+.stock-badge.stock-ok {
+  background: rgba(16,185,129,0.12);
+  color: #34d399;
+  border-color: rgba(16,185,129,0.35);
+}
+
+.stock-badge.stock-waiting {
+  background: rgba(245,158,11,0.12);
+  color: #fbbf24;
+  border-color: rgba(245,158,11,0.35);
+}
+
+.stock-badge.stock-uncertain {
+  background: rgba(139,92,246,0.12);
+  color: #a78bfa;
+  border-color: rgba(139,92,246,0.35);
+}
