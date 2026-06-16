@@ -12,7 +12,7 @@ const Inventory = {
   load: async () => {
     const { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, photo, stock_status, created_at')
+      .select('id, name, qtd, size, color, photo, created_at')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -190,27 +190,43 @@ const Inventory = {
     document.getElementById('edit-size').value = prod.size || '';
     document.getElementById('edit-color').value = prod.color || '';
 
+    // Reset stock status to default while we await the lazy fetch
     const stockSel = document.getElementById('edit-stock-status');
-    if (stockSel) stockSel.value = prod.stock_status || 'em_estoque';
+    if (stockSel) stockSel.value = 'em_estoque';
 
     document.getElementById('modal-edit-product').classList.add('active');
 
-    // Fetch photo lazily for this specific product
+    // Fetch photo and stock_status lazily for this specific product
     const preview = document.getElementById('edit-photo-preview');
     if (preview) {
-      preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Carregando foto...</span>';
-      const { data } = await AppSupabase.from('inventory').select('photo').eq('id', id).single();
-      if (data && data.photo) {
-        preview.innerHTML = `<img src="${data.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;" title="Foto atual">`;
-      } else {
+      preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Carregando...</span>';
+      try {
+        const { data, error } = await AppSupabase.from('inventory').select('photo, stock_status').eq('id', id).single();
+        if (!error && data) {
+          preview.innerHTML = data.photo
+            ? `<img src="${data.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;" title="Foto atual">`
+            : '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
+          if (stockSel) stockSel.value = data.stock_status || 'em_estoque';
+        } else {
+          preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
+        }
+      } catch (_) {
         preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
       }
     }
   },
 
   updateProduct: async (id, data) => {
-    const { error } = await AppSupabase.from('inventory').update(data).eq('id', id);
+    // Separate stock_status from the rest so it's only sent if the column exists
+    const { stock_status, ...baseData } = data;
+    const payload = { ...baseData };
+    if (stock_status !== undefined) payload.stock_status = stock_status;
+
+    const { error } = await AppSupabase.from('inventory').update(payload).eq('id', id);
     if (!error) {
+      // Update local product so reservations badge reflects new stock_status immediately
+      const local = Inventory.products.find(p => p.id === id);
+      if (local && stock_status !== undefined) local.stock_status = stock_status;
       // Always propagate current name to sales and reservations (SECURITY DEFINER bypasses RLS)
       const { error: rpcError } = await AppSupabase.rpc('propagate_product_name', {
         p_product_id: id,
