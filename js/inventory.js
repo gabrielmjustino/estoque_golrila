@@ -303,37 +303,38 @@ const Inventory = {
     if (formAdd) {
       formAdd.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name    = document.getElementById('add-name').value;
-        const qtd     = parseInt(document.getElementById('add-qtd').value);
-        const size    = document.getElementById('add-size').value;
-        const color   = document.getElementById('add-color').value;
+        const name      = document.getElementById('add-name').value;
+        const qtd       = parseInt(document.getElementById('add-qtd').value);
+        const size      = document.getElementById('add-size').value;
+        const color     = document.getElementById('add-color').value;
         const submitBtn = formAdd.querySelector('[type="submit"]');
 
+        // → Captura e zera IMEDIATAMENTE para evitar re-uso em submits futuros
+        const fileToUpload  = currentPhotoFile;
+        currentPhotoFile    = null;
+
         let photoUrl = '';
+        submitBtn.disabled = true;
 
-        if (currentPhotoFile) {
-          // Mostra progresso no botão
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Enviando foto... 0%';
-
-          try {
-            photoUrl = await Cloudinary.upload(currentPhotoFile, (pct) => {
+        try {
+          if (fileToUpload) {
+            submitBtn.textContent = 'Enviando foto... 0%';
+            photoUrl = await Cloudinary.upload(fileToUpload, (pct) => {
               submitBtn.textContent = `Enviando foto... ${pct}%`;
             });
-          } catch (err) {
-            Toast.show('Erro ao enviar imagem: ' + err.message, 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Salvar Produto';
-            return;
           }
-        }
 
-        submitBtn.textContent = 'Salvando...';
-        await Inventory.addProduct({ name, photo: photoUrl, qtd, size, color });
-        Toast.show('Produto adicionado ao estoque!', 'success');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Salvar Produto';
-        closeAddModal();
+          submitBtn.textContent = 'Salvando...';
+          await Inventory.addProduct({ name, photo: photoUrl, qtd, size, color });
+          Toast.show('Produto adicionado ao estoque!', 'success');
+          closeAddModal();
+        } catch (err) {
+          Toast.show('Erro: ' + (err.message || 'Falha ao salvar produto.'), 'error');
+        } finally {
+          // Sempre restaura o botão, independente de sucesso ou erro
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Salvar Produto';
+        }
       });
     }
 
@@ -424,27 +425,31 @@ const Inventory = {
         const color = document.getElementById('edit-color').value;
         const editSubmitBtn = formEdit.querySelector('[type="submit"]');
 
+        // → Captura e zera IMEDIATAMENTE para evitar re-uso em submits futuros
+        const fileToUpload = editPhotoFile;
+        editPhotoFile      = null;
+
         const updateData = { name, qtd, size, color };
+        editSubmitBtn.disabled = true;
 
-        if (editPhotoFile !== null) {
-          editSubmitBtn.disabled = true;
-          editSubmitBtn.textContent = 'Enviando foto... 0%';
-
-          try {
-            const url = await Cloudinary.upload(editPhotoFile, (pct) => {
+        try {
+          if (fileToUpload !== null) {
+            editSubmitBtn.textContent = 'Enviando foto... 0%';
+            const url = await Cloudinary.upload(fileToUpload, (pct) => {
               editSubmitBtn.textContent = `Enviando foto... ${pct}%`;
             });
             updateData.photo = url;
-          } catch (err) {
-            Toast.show('Erro ao enviar imagem: ' + err.message, 'error');
-            editSubmitBtn.disabled = false;
-            editSubmitBtn.textContent = 'Salvar Alterações';
-            return;
           }
-        }
 
-        await Inventory.updateProduct(id, updateData);
-        closeEditModal();
+          editSubmitBtn.textContent = 'Salvando...';
+          await Inventory.updateProduct(id, updateData);
+          closeEditModal();
+        } catch (err) {
+          Toast.show('Erro: ' + (err.message || 'Falha ao atualizar produto.'), 'error');
+        } finally {
+          editSubmitBtn.disabled = false;
+          editSubmitBtn.textContent = 'Salvar Alterações';
+        }
       });
     }
   },
