@@ -654,6 +654,17 @@ body {
   color: var(--text-muted);
 }
 
+/* Inventory total card — single compact box */
+.inventory-total-card {
+  max-width: 280px;
+  border-left: 3px solid var(--primary);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.inventory-total-card:hover {
+  box-shadow: 0 4px 20px rgba(252, 191, 0, 0.15);
+  transform: translateY(-2px);
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -1283,4 +1294,95 @@ body {
     margin-left: 0;
     width: 100%;
   }
+}
+
+/* ==================== DRAG & DROP — ESTOQUE ==================== */
+
+/* Coluna do handle no cabeçalho */
+.drag-handle-col {
+  width: 36px;
+  text-align: center;
+  color: var(--border-color) !important;
+  font-size: 1rem;
+  user-select: none;
+}
+
+/* Célula do handle em cada linha */
+.drag-handle-cell {
+  width: 36px;
+  text-align: center;
+  padding: 0.5rem !important;
+}
+
+/* O ícone de arraste */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: grab;
+  color: var(--text-muted);
+  opacity: 0.35;
+  transition: opacity 0.18s, color 0.18s, background 0.18s;
+  user-select: none;
+}
+
+/* Mostra o handle ao passar o mouse na linha */
+.data-table tbody tr:hover .drag-handle {
+  opacity: 1;
+  color: var(--primary);
+  background: rgba(252, 191, 0, 0.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle i {
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+/* Linha sendo arrastada — "fantasma" translúcido */
+.data-table tbody tr.dragging {
+  opacity: 0.35;
+  background: var(--bg-surface-light) !important;
+  box-shadow: inset 0 0 0 2px rgba(252, 191, 0, 0.25);
+  border-radius: 8px;
+}
+
+/* Indicador: linha acima do alvo */
+.data-table tbody tr.drag-over-top td:first-child,
+.data-table tbody tr.drag-over-top {
+  box-shadow: none;
+}
+.data-table tbody tr.drag-over-top {
+  border-top: 2.5px solid var(--primary) !important;
+  position: relative;
+}
+
+/* Indicador: linha abaixo do alvo */
+.data-table tbody tr.drag-over-bottom {
+  border-bottom: 2.5px solid var(--primary) !important;
+}
+
+/* Linha placeholder (vazio) durante o arraste */
+.drag-placeholder {
+  background: rgba(252, 191, 0, 0.06) !important;
+  border: 2px dashed rgba(252, 191, 0, 0.35) !important;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  pointer-events: none;
+}
+
+.drag-placeholder td {
+  padding: 1.8rem !important;
+  border: none !important;
+}
+
+/* Garante que a linha com draggable não bloqueie cliques nos botões */
+.data-table tbody tr[draggable="true"] td:not(.drag-handle-cell) {
+  cursor: default;
 }

@@ -6,19 +6,48 @@ const Inventory = {
     await Inventory.load();
     Inventory.render();
     Inventory.setupEventListeners();
+    Inventory.ensureSortOrder(); // garante sort_order no banco se ainda não existir
   },
 
-  // Lightweight load — excludes base64 photo to avoid huge payloads
+  // Lightweight load — ordena por sort_order, fallback para created_at
   load: async () => {
     const { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, photo, created_at')
-      .order('created_at', { ascending: false });
+      .select('id, name, qtd, size, color, photo, created_at, sort_order')
+      .order('sort_order', { ascending: true, nullsFirst: false });
 
     if (!error && data) {
+      // Se alguns produtos não têm sort_order ainda, eles vêm no final; preserve a ordem
       Inventory.products = data;
     } else if (error) {
-      console.error('Erro ao carregar estoque do Supabase', error);
+      // Fallback: se a coluna sort_order não existir ainda, carrega sem ela
+      const { data: fallback, error: err2 } = await AppSupabase
+        .from('inventory')
+        .select('id, name, qtd, size, color, photo, created_at')
+        .order('created_at', { ascending: false });
+
+      if (!err2 && fallback) {
+        Inventory.products = fallback;
+      } else {
+        console.error('Erro ao carregar estoque do Supabase', err2);
+      }
+    }
+  },
+
+  // Garante que todos os produtos tenham sort_order definido
+  ensureSortOrder: async () => {
+    const sem = Inventory.products.filter(p => p.sort_order == null);
+    if (sem.length === 0) return;
+
+    // Descobre o maior sort_order existente
+    let maxOrder = Inventory.products.reduce((max, p) => {
+      return (p.sort_order != null && p.sort_order > max) ? p.sort_order : max;
+    }, 0);
+
+    for (const p of sem) {
+      maxOrder++;
+      await AppSupabase.from('inventory').update({ sort_order: maxOrder }).eq('id', p.id);
+      p.sort_order = maxOrder;
     }
   },
 
@@ -28,8 +57,15 @@ const Inventory = {
 
     tbody.innerHTML = '';
 
+    // Atualiza o card de total de produtos em estoque
+    const totalQtyEl = document.getElementById('inventory-stat-total-qty');
+    if (totalQtyEl) {
+      const totalQty = Inventory.products.reduce((sum, p) => sum + (p.qtd || 0), 0);
+      totalQtyEl.textContent = totalQty;
+    }
+
     if (Inventory.products.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhum produto cadastrado no estoque atualmente.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhum produto cadastrado no estoque atualmente.</td></tr>`;
       return;
     }
 
@@ -37,6 +73,9 @@ const Inventory = {
 
     Inventory.products.forEach(prod => {
       const tr = document.createElement('tr');
+      tr.setAttribute('data-id', prod.id);
+      tr.setAttribute('draggable', 'true');
+
       const qtdClass = prod.qtd <= 5 ? 'tag qtd danger' : 'tag qtd';
 
       const photoHtml = prod.photo
@@ -44,6 +83,11 @@ const Inventory = {
         : `<div style="width: 40px; height: 40px; background: var(--bg-surface-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><i class='bx bx-image-alt'></i></div>`;
 
       tr.innerHTML = `
+        <td class="drag-handle-cell">
+          <span class="drag-handle" title="Arraste para reordenar">
+            <i class='bx bx-grid-vertical'></i>
+          </span>
+        </td>
         <td style="color: var(--text-muted); font-family: monospace;">#${prod.id.slice(0, 6).toUpperCase()}</td>
         <td>${photoHtml}</td>
         <td style="font-weight: 500;">${prod.name}</td>
@@ -61,8 +105,150 @@ const Inventory = {
     });
 
     tbody.appendChild(fragment);
+
+    // Inicializa drag & drop após renderizar
+    Inventory.initDragDrop(tbody);
   },
 
+  // ===================== DRAG & DROP =====================
+  _drag: {
+    draggingEl: null,
+    placeholder: null,
+    startIndex: -1,
+    saveTimeout: null,
+  },
+
+  initDragDrop: (tbody) => {
+    const d = Inventory._drag;
+
+    // Cria um placeholder estilizado (linha "fantasma")
+    const createPlaceholder = () => {
+      const ph = document.createElement('tr');
+      ph.className = 'drag-placeholder';
+      ph.innerHTML = `<td colspan="8"></td>`;
+      return ph;
+    };
+
+    tbody.querySelectorAll('tr[draggable="true"]').forEach(row => {
+      // ── Drag START ──────────────────────────────────────────────────
+      row.addEventListener('dragstart', (e) => {
+        d.draggingEl = row;
+        d.startIndex = [...tbody.children].indexOf(row);
+
+        // Snapshot fantasma: só o handle ativa o drag
+        setTimeout(() => {
+          row.classList.add('dragging');
+        }, 0);
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.id);
+
+        // Cria placeholder
+        d.placeholder = createPlaceholder();
+      });
+
+      // ── Drag END ────────────────────────────────────────────────────
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        if (d.placeholder && d.placeholder.parentNode) {
+          d.placeholder.parentNode.removeChild(d.placeholder);
+        }
+        document.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+          el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        d.draggingEl = null;
+        d.placeholder = null;
+      });
+
+      // ── Drag OVER ──────────────────────────────────────────────────
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!d.draggingEl || d.draggingEl === row) return;
+        e.dataTransfer.dropEffect = 'move';
+
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+
+        document.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+          el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        if (e.clientY < midY) {
+          row.classList.add('drag-over-top');
+        } else {
+          row.classList.add('drag-over-bottom');
+        }
+      });
+
+      row.addEventListener('dragleave', (e) => {
+        if (!row.contains(e.relatedTarget)) {
+          row.classList.remove('drag-over-top', 'drag-over-bottom');
+        }
+      });
+
+      // ── DROP ────────────────────────────────────────────────────────
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!d.draggingEl || d.draggingEl === row) return;
+
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const insertBefore = e.clientY < midY;
+
+        if (insertBefore) {
+          tbody.insertBefore(d.draggingEl, row);
+        } else {
+          row.after(d.draggingEl);
+        }
+
+        row.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        // Atualiza a ordem no array local e persiste no banco
+        Inventory._updateOrderFromDOM(tbody);
+      });
+    });
+  },
+
+  // Lê a nova ordem do DOM e persiste no Supabase
+  _updateOrderFromDOM: (tbody) => {
+    const rows = [...tbody.querySelectorAll('tr[data-id]')];
+    const newOrder = rows.map((row, idx) => ({
+      id: row.dataset.id,
+      sort_order: idx + 1,
+    }));
+
+    // Atualiza array local
+    newOrder.forEach(({ id, sort_order }) => {
+      const prod = Inventory.products.find(p => p.id === id);
+      if (prod) prod.sort_order = sort_order;
+    });
+
+    // Re-ordena o array local para manter consistência
+    Inventory.products.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    // Debounce: salva 400ms após o usuário parar de arrastar
+    clearTimeout(Inventory._drag.saveTimeout);
+    Inventory._drag.saveTimeout = setTimeout(async () => {
+      await Inventory._persistOrder(newOrder);
+    }, 400);
+  },
+
+  // Persiste a nova ordem no Supabase usando upsert em batch
+  _persistOrder: async (orderList) => {
+    const updates = orderList.map(({ id, sort_order }) =>
+      AppSupabase.from('inventory').update({ sort_order }).eq('id', id)
+    );
+
+    const results = await Promise.all(updates);
+    const hasError = results.some(r => r.error);
+
+    if (hasError) {
+      console.warn('Erro ao persistir ordem de arraste no Supabase. A ordem visual foi mantida.');
+    }
+    // Toast silencioso — não interrompe o fluxo do usuário
+  },
+
+  // ===================== EVENT LISTENERS =====================
   setupEventListeners: () => {
     // --- Modal: Adicionar Produto ---
     const modalAdd = document.getElementById('modal-add-product');
@@ -237,12 +423,18 @@ const Inventory = {
   },
 
   addProduct: async (data) => {
+    // Novo produto vai para o TOPO (sort_order = 0 e reordena os demais)
+    const maxOrder = Inventory.products.length > 0
+      ? Math.max(...Inventory.products.map(p => p.sort_order || 0))
+      : 0;
+
     const { error } = await AppSupabase.from('inventory').insert([{
       name: data.name,
       photo: data.photo || '',
       qtd: data.qtd,
       size: data.size,
-      color: data.color
+      color: data.color,
+      sort_order: maxOrder + 1,
     }]);
 
     if (!error) {

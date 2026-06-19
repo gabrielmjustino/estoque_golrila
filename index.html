@@ -184,11 +184,25 @@
             <button class="btn-primary" id="btn-open-add-modal"><i class='bx bx-plus'></i> Novo Produto</button>
           </div>
 
+          <!-- Card: Total de Produtos em Estoque -->
+          <div class="dashboard-stats mt-4">
+            <div class="stat-card inventory-total-card">
+              <div class="stat-icon" style="background: rgba(252, 191, 0, 0.15); color: var(--primary);">
+                <i class='bx bx-package'></i>
+              </div>
+              <div class="stat-details">
+                <h3 id="inventory-stat-total-qty">0</h3>
+                <p>Total de Produtos em Estoque</p>
+              </div>
+            </div>
+          </div>
+
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="inventory-table">
                 <thead>
                   <tr>
+                    <th class="drag-handle-col" title="Arraste para reordenar"><i class='bx bx-list-ul'></i></th>
                     <th>Cod.</th>
                     <th>Foto</th>
                     <th>Produto</th>
@@ -458,7 +472,7 @@
                 <div class="conta-icon"><i class='bx bx-credit-card'></i></div>
                 <div>
                   <span class="conta-label">Valor da Conta</span>
-                  <span class="conta-subtitle">Entradas menos Saídas no período</span>
+                  <span class="conta-subtitle">Saldo histórico total (todas as transações)</span>
                 </div>
               </div>
               <div class="conta-value-wrap">
