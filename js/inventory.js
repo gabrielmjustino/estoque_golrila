@@ -375,11 +375,44 @@ const Inventory = {
       formEdit.reset();
       editPhotoFile = null;
       if (editPhotoPreview) editPhotoPreview.innerHTML = '';
+      const delBtn = document.getElementById('btn-delete-photo');
+      if (delBtn) delBtn.style.display = 'none';
     };
 
     if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
     if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
     if (modalEdit) modalEdit.addEventListener('click', (e) => { if (e.target === modalEdit) closeEditModal(); });
+
+    // --- Botão: Apagar Foto ---
+    const btnDeletePhoto = document.getElementById('btn-delete-photo');
+    if (btnDeletePhoto) {
+      btnDeletePhoto.addEventListener('click', async () => {
+        if (!confirm('Tem certeza que deseja remover a foto deste produto?')) return;
+
+        const id = document.getElementById('edit-product-id').value;
+        btnDeletePhoto.disabled = true;
+        btnDeletePhoto.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Removendo...`;
+
+        const { error } = await AppSupabase.from('inventory').update({ photo: '' }).eq('id', id);
+
+        if (!error) {
+          // Atualiza cache local
+          const prod = Inventory.products.find(p => p.id === id);
+          if (prod) prod.photo = '';
+
+          if (editPhotoPreview) editPhotoPreview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
+          btnDeletePhoto.style.display = 'none';
+          editPhotoFile = null;
+          Toast.show('Foto removida com sucesso.', 'info');
+          Inventory.render(); // Atualiza a linha na tabela
+        } else {
+          Toast.show('Erro ao remover foto.', 'error');
+        }
+
+        btnDeletePhoto.disabled = false;
+        btnDeletePhoto.innerHTML = `<i class='bx bx-trash'></i> Apagar Foto`;
+      });
+    }
 
     if (formEdit) {
       formEdit.addEventListener('submit', async (e) => {
@@ -427,6 +460,10 @@ const Inventory = {
     document.getElementById('edit-size').value = prod.size || '';
     document.getElementById('edit-color').value = prod.color || '';
 
+    // Garante que o botão começa oculto até confirmar se há foto
+    const delBtn = document.getElementById('btn-delete-photo');
+    if (delBtn) delBtn.style.display = 'none';
+
     document.getElementById('modal-edit-product').classList.add('active');
 
     // Fetch photo lazily for this specific product
@@ -435,7 +472,9 @@ const Inventory = {
       preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Carregando foto...</span>';
       const { data } = await AppSupabase.from('inventory').select('photo').eq('id', id).single();
       if (data && data.photo) {
-        preview.innerHTML = `<img src="${data.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;" title="Foto atual">`;
+        preview.innerHTML = `<img src="${data.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" title="Foto atual">`;
+        // Mostra o botão de apagar somente quando há foto
+        if (delBtn) delBtn.style.display = 'inline-flex';
       } else {
         preview.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">Sem foto atual</span>';
       }

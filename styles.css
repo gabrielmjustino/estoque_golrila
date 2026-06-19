@@ -499,6 +499,34 @@ body {
   color: var(--danger);
 }
 
+/* Botão Apagar Foto dentro do modal de edição */
+.btn-delete-photo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-delete-photo:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+}
+.btn-delete-photo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Modals */
 .modal {
   display: none;

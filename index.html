@@ -275,7 +275,12 @@
                   <div class="input-group">
                     <label>Nova Foto (Opcional)</label>
                     <input type="file" id="edit-photo" accept="image/*" style="padding: 0.6rem 1rem;">
-                    <div id="edit-photo-preview" style="margin-top:0.5rem;"></div>
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.5rem;">
+                      <div id="edit-photo-preview"></div>
+                      <button type="button" id="btn-delete-photo" class="btn-delete-photo" style="display:none;" title="Remover foto do produto">
+                        <i class='bx bx-trash'></i> Apagar Foto
+                      </button>
+                    </div>
                   </div>
                   <div class="input-group">
                     <label>Quantidade</label>
