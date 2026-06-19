@@ -258,22 +258,30 @@ const Inventory = {
     const formAdd = document.getElementById('form-add-product');
     const photoInput = document.getElementById('add-photo');
 
-    let currentPhotoBase64 = '';
+    // Guarda o File selecionado (não mais base64)
+    let currentPhotoFile = null;
 
     if (photoInput) {
       photoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          if (file.size > 2 * 1024 * 1024) {
-            Toast.show('Por favor, escolha uma imagem menor que 2MB.', 'warning');
+          if (file.size > 5 * 1024 * 1024) {
+            Toast.show('Por favor, escolha uma imagem menor que 5MB.', 'warning');
             photoInput.value = '';
+            currentPhotoFile = null;
             return;
           }
+          currentPhotoFile = file;
+
+          // Preview local enquanto não faz upload
           const reader = new FileReader();
-          reader.onload = (ev) => { currentPhotoBase64 = ev.target.result; };
+          reader.onload = (ev) => {
+            const preview = document.getElementById('add-photo-preview');
+            if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-top:4px;">`;
+          };
           reader.readAsDataURL(file);
         } else {
-          currentPhotoBase64 = '';
+          currentPhotoFile = null;
         }
       });
     }
@@ -283,7 +291,9 @@ const Inventory = {
     const closeAddModal = () => {
       modalAdd.classList.remove('active');
       formAdd.reset();
-      currentPhotoBase64 = '';
+      currentPhotoFile = null;
+      const preview = document.getElementById('add-photo-preview');
+      if (preview) preview.innerHTML = '';
     };
 
     if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
@@ -291,15 +301,38 @@ const Inventory = {
     if (modalAdd) modalAdd.addEventListener('click', (e) => { if (e.target === modalAdd) closeAddModal(); });
 
     if (formAdd) {
-      formAdd.addEventListener('submit', (e) => {
+      formAdd.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = document.getElementById('add-name').value;
-        const photo = currentPhotoBase64;
-        const qtd = parseInt(document.getElementById('add-qtd').value);
-        const size = document.getElementById('add-size').value;
-        const color = document.getElementById('add-color').value;
-        Inventory.addProduct({ name, photo, qtd, size, color });
+        const name    = document.getElementById('add-name').value;
+        const qtd     = parseInt(document.getElementById('add-qtd').value);
+        const size    = document.getElementById('add-size').value;
+        const color   = document.getElementById('add-color').value;
+        const submitBtn = formAdd.querySelector('[type="submit"]');
+
+        let photoUrl = '';
+
+        if (currentPhotoFile) {
+          // Mostra progresso no botão
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Enviando foto... 0%';
+
+          try {
+            photoUrl = await Cloudinary.upload(currentPhotoFile, (pct) => {
+              submitBtn.textContent = `Enviando foto... ${pct}%`;
+            });
+          } catch (err) {
+            Toast.show('Erro ao enviar imagem: ' + err.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Salvar Produto';
+            return;
+          }
+        }
+
+        submitBtn.textContent = 'Salvando...';
+        await Inventory.addProduct({ name, photo: photoUrl, qtd, size, color });
         Toast.show('Produto adicionado ao estoque!', 'success');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Produto';
         closeAddModal();
       });
     }
@@ -312,25 +345,27 @@ const Inventory = {
     const editPhotoInput = document.getElementById('edit-photo');
     const editPhotoPreview = document.getElementById('edit-photo-preview');
 
-    let editPhotoBase64 = null; // null = não trocou foto
+    let editPhotoFile = null; // null = não trocou foto
 
     if (editPhotoInput) {
       editPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          if (file.size > 2 * 1024 * 1024) {
-            Toast.show('Por favor, escolha uma imagem menor que 2MB.', 'warning');
+          if (file.size > 5 * 1024 * 1024) {
+            Toast.show('Por favor, escolha uma imagem menor que 5MB.', 'warning');
             editPhotoInput.value = '';
             return;
           }
+          editPhotoFile = file;
+
+          // Preview local antes do upload
           const reader = new FileReader();
           reader.onload = (ev) => {
-            editPhotoBase64 = ev.target.result;
-            if (editPhotoPreview) editPhotoPreview.innerHTML = `<img src="${editPhotoBase64}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;">`;
+            if (editPhotoPreview) editPhotoPreview.innerHTML = `<img src="${ev.target.result}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin-top:4px;">`;
           };
           reader.readAsDataURL(file);
         } else {
-          editPhotoBase64 = null;
+          editPhotoFile = null;
         }
       });
     }
@@ -338,7 +373,7 @@ const Inventory = {
     const closeEditModal = () => {
       modalEdit.classList.remove('active');
       formEdit.reset();
-      editPhotoBase64 = null;
+      editPhotoFile = null;
       if (editPhotoPreview) editPhotoPreview.innerHTML = '';
     };
 
@@ -349,14 +384,31 @@ const Inventory = {
     if (formEdit) {
       formEdit.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('edit-product-id').value;
-        const name = document.getElementById('edit-name').value;
-        const qtd = parseInt(document.getElementById('edit-qtd').value);
-        const size = document.getElementById('edit-size').value;
+        const id    = document.getElementById('edit-product-id').value;
+        const name  = document.getElementById('edit-name').value;
+        const qtd   = parseInt(document.getElementById('edit-qtd').value);
+        const size  = document.getElementById('edit-size').value;
         const color = document.getElementById('edit-color').value;
+        const editSubmitBtn = formEdit.querySelector('[type="submit"]');
 
         const updateData = { name, qtd, size, color };
-        if (editPhotoBase64 !== null) updateData.photo = editPhotoBase64;
+
+        if (editPhotoFile !== null) {
+          editSubmitBtn.disabled = true;
+          editSubmitBtn.textContent = 'Enviando foto... 0%';
+
+          try {
+            const url = await Cloudinary.upload(editPhotoFile, (pct) => {
+              editSubmitBtn.textContent = `Enviando foto... ${pct}%`;
+            });
+            updateData.photo = url;
+          } catch (err) {
+            Toast.show('Erro ao enviar imagem: ' + err.message, 'error');
+            editSubmitBtn.disabled = false;
+            editSubmitBtn.textContent = 'Salvar Alterações';
+            return;
+          }
+        }
 
         await Inventory.updateProduct(id, updateData);
         closeEditModal();
