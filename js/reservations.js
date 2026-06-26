@@ -234,17 +234,53 @@ const Reservations = {
       if (persText) { persText.style.display = 'none'; persText.value = ''; }
     };
 
+    const resetOwner = () => {
+      const julioBtn   = document.getElementById('reserve-owner-julio');
+      const justinoBtn = document.getElementById('reserve-owner-justino');
+      if (julioBtn)   julioBtn.classList.add('active');
+      if (justinoBtn) justinoBtn.classList.remove('active');
+      const hint = document.getElementById('reserve-owner-stock-hint');
+      if (hint) hint.textContent = '';
+    };
+
     const closeModal = () => {
       if (modal) modal.classList.remove('active');
       if (form) form.reset();
       const hiddenId = document.getElementById('reserve-product-id');
       if (hiddenId) hiddenId.value = '';
       resetPersonalization();
+      resetOwner();
     };
 
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
     if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // Owner toggle (Júlio / Justino)
+    const resOwnerJulio   = document.getElementById('reserve-owner-julio');
+    const resOwnerJustino = document.getElementById('reserve-owner-justino');
+    const resOwnerHint    = document.getElementById('reserve-owner-stock-hint');
+
+    const _getResOwnerHint = (owner) => {
+      const productId = document.getElementById('reserve-product-id')?.value;
+      const prod = productId ? Inventory.products.find(p => p.id === productId) : null;
+      if (!prod) return '';
+      const qty = owner === 'julio' ? (prod.qtd_julio ?? 0) : (prod.qtd_justino ?? 0);
+      return `Saldo disponível: ${qty} uni.`;
+    };
+
+    if (resOwnerJulio && resOwnerJustino) {
+      resOwnerJulio.addEventListener('click', () => {
+        resOwnerJulio.classList.add('active');
+        resOwnerJustino.classList.remove('active');
+        if (resOwnerHint) resOwnerHint.textContent = _getResOwnerHint('julio');
+      });
+      resOwnerJustino.addEventListener('click', () => {
+        resOwnerJustino.classList.add('active');
+        resOwnerJulio.classList.remove('active');
+        if (resOwnerHint) resOwnerHint.textContent = _getResOwnerHint('justino');
+      });
+    }
 
     // Personalization toggle
     const resPersNo = document.getElementById('reserve-pers-no');
