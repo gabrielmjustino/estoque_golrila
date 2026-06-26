@@ -13,7 +13,7 @@ const Inventory = {
   load: async () => {
     const { data, error } = await AppSupabase
       .from('inventory')
-      .select('id, name, qtd, size, color, photo, created_at, sort_order')
+      .select('id, name, qtd, size, color, photo, created_at, sort_order, stock_status, qtd_julio, qtd_justino')
       .order('sort_order', { ascending: true, nullsFirst: false });
 
     if (!error && data) {
@@ -23,7 +23,7 @@ const Inventory = {
       // Fallback: se a coluna sort_order não existir ainda, carrega sem ela
       const { data: fallback, error: err2 } = await AppSupabase
         .from('inventory')
-        .select('id, name, qtd, size, color, photo, created_at')
+        .select('id, name, qtd, size, color, photo, created_at, stock_status, qtd_julio, qtd_justino')
         .order('created_at', { ascending: false });
 
       if (!err2 && fallback) {
@@ -82,6 +82,15 @@ const Inventory = {
         ? `<img src="${prod.photo}" alt="${prod.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);">`
         : `<div style="width: 40px; height: 40px; background: var(--bg-surface-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><i class='bx bx-image-alt'></i></div>`;
 
+      // Stock status badge
+      const stockMap = {
+        em_estoque: { icon: 'bx-check-shield', text: 'Em Estoque', cls: 'stock-ok' },
+        aguardando:  { icon: 'bx-time',         text: 'A Caminho',  cls: 'stock-waiting' },
+        incerto:     { icon: 'bx-question-mark', text: 'Incerto',    cls: 'stock-uncertain' },
+      };
+      const sInfo = stockMap[prod.stock_status] || stockMap['em_estoque'];
+      const stockBadge = `<span class="stock-badge ${sInfo.cls}"><i class='bx ${sInfo.icon}'></i> ${sInfo.text}</span>`;
+
       tr.innerHTML = `
         <td class="drag-handle-cell">
           <span class="drag-handle" title="Arraste para reordenar">
@@ -94,6 +103,9 @@ const Inventory = {
         <td><span class="tag">${prod.size || '—'}</span></td>
         <td><span class="tag">${prod.color || '—'}</span></td>
         <td><span class="${qtdClass}">${prod.qtd} uni.</span></td>
+        <td><span class="tag qtd-person">${prod.qtd_julio ?? 0}</span></td>
+        <td><span class="tag qtd-person">${prod.qtd_justino ?? 0}</span></td>
+        <td>${stockBadge}</td>
         <td>
           <button class="btn-icon edit"    onclick="Inventory.openEditModal('${prod.id}')"    title="Editar Produto"><i class='bx bx-pencil'></i></button>
           <button class="btn-icon sell"    onclick="Inventory.openSellModal('${prod.id}')"    title="Realizar Venda"><i class='bx bx-cart-add'></i></button>
@@ -423,13 +435,31 @@ const Inventory = {
         const qtd   = parseInt(document.getElementById('edit-qtd').value);
         const size  = document.getElementById('edit-size').value;
         const color = document.getElementById('edit-color').value;
+        const qtdJulio   = parseInt(document.getElementById('edit-qtd-julio')?.value) || 0;
+        const qtdJustino = parseInt(document.getElementById('edit-qtd-justino')?.value) || 0;
+        const stockStatus = document.getElementById('edit-stock-status')?.value || 'em_estoque';
         const editSubmitBtn = formEdit.querySelector('[type="submit"]');
+
+        // Validação: cada pessoa não pode ter mais do que o estoque total
+        if (qtdJulio > qtd) {
+          Toast.show(`Qtd. do Júlio (${qtdJulio}) não pode ser maior que o estoque total (${qtd}).`, 'warning');
+          return;
+        }
+        if (qtdJustino > qtd) {
+          Toast.show(`Qtd. do Justino (${qtdJustino}) não pode ser maior que o estoque total (${qtd}).`, 'warning');
+          return;
+        }
+        // Validação: a SOMA não pode ultrapassar o total
+        if (qtdJulio + qtdJustino > qtd) {
+          Toast.show(`A soma Júlio (${qtdJulio}) + Justino (${qtdJustino}) = ${qtdJulio + qtdJustino} não pode ultrapassar o estoque total (${qtd}).`, 'warning');
+          return;
+        }
 
         // → Captura e zera IMEDIATAMENTE para evitar re-uso em submits futuros
         const fileToUpload = editPhotoFile;
         editPhotoFile      = null;
 
-        const updateData = { name, qtd, size, color };
+        const updateData = { name, qtd, size, color, stock_status: stockStatus, qtd_julio: qtdJulio, qtd_justino: qtdJustino };
         editSubmitBtn.disabled = true;
 
         try {
@@ -464,6 +494,25 @@ const Inventory = {
     document.getElementById('edit-qtd').value = prod.qtd;
     document.getElementById('edit-size').value = prod.size || '';
     document.getElementById('edit-color').value = prod.color || '';
+    const julioEl = document.getElementById('edit-qtd-julio');
+    if (julioEl) {
+      julioEl.value = prod.qtd_julio ?? 0;
+      julioEl.max   = prod.qtd;
+      julioEl.title = `Máximo: ${prod.qtd} (total em estoque)`;
+    }
+    const justinoEl = document.getElementById('edit-qtd-justino');
+    if (justinoEl) {
+      justinoEl.value = prod.qtd_justino ?? 0;
+      justinoEl.max   = prod.qtd;
+      justinoEl.title = `Máximo: ${prod.qtd} (total em estoque)`;
+    }
+    // Inicializa os hints de máximo
+    const hjEl = document.getElementById('edit-julio-hint');
+    if (hjEl) hjEl.textContent = `Máx: ${prod.qtd}`;
+    const hjnEl = document.getElementById('edit-justino-hint');
+    if (hjnEl) hjnEl.textContent = `Máx: ${prod.qtd}`;
+    const stockSel = document.getElementById('edit-stock-status');
+    if (stockSel) stockSel.value = prod.stock_status || 'em_estoque';
 
     // Garante que o botão começa oculto até confirmar se há foto
     const delBtn = document.getElementById('btn-delete-photo');
@@ -513,8 +562,9 @@ const Inventory = {
       Inventory.render();
       Toast.show('Produto atualizado com sucesso!', 'success');
     } else {
-      console.error(error);
-      Toast.show('Erro ao atualizar produto.', 'error');
+      console.error('Supabase update error:', error);
+      // Lança exceção para o handler fechar o modal apenas em sucesso
+      throw new Error(error.message || 'Falha ao atualizar produto no banco.');
     }
   },
 
@@ -531,6 +581,8 @@ const Inventory = {
       size: data.size,
       color: data.color,
       sort_order: maxOrder + 1,
+      qtd_julio: 0,
+      qtd_justino: 0,
     }]);
 
     if (!error) {

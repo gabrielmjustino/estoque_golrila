@@ -209,6 +209,9 @@
                     <th>Tamanho</th>
                     <th>Cor</th>
                     <th>Qtd.</th>
+                    <th>Júlio</th>
+                    <th>Justino</th>
+                    <th>Status</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -283,8 +286,8 @@
                     </div>
                   </div>
                   <div class="input-group">
-                    <label>Quantidade</label>
-                    <input type="number" id="edit-qtd" min="0" required>
+                    <label>Quantidade Total</label>
+                    <input type="number" id="edit-qtd" min="0" required oninput="(function(v){var j=document.getElementById('edit-qtd-julio'),jn=document.getElementById('edit-qtd-justino'),hj=document.getElementById('edit-julio-hint'),hjn=document.getElementById('edit-justino-hint');if(j)j.max=v;if(jn)jn.max=v;if(hj)hj.textContent='Máx: '+v;if(hjn)hjn.textContent='Máx: '+v;})(parseInt(this.value)||0)">
                   </div>
                   <div class="input-group">
                     <label>Tamanho</label>
@@ -293,6 +296,22 @@
                   <div class="input-group">
                     <label>Cor</label>
                     <input type="text" id="edit-color" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Qtd. Júlio <span id="edit-julio-hint" style="font-size:0.75rem; color:var(--primary); font-weight:400;"></span></label>
+                    <input type="number" id="edit-qtd-julio" min="0" placeholder="0">
+                  </div>
+                  <div class="input-group">
+                    <label>Qtd. Justino <span id="edit-justino-hint" style="font-size:0.75rem; color:var(--primary); font-weight:400;"></span></label>
+                    <input type="number" id="edit-qtd-justino" min="0" placeholder="0">
+                  </div>
+                  <div class="input-group">
+                    <label>Status do Estoque</label>
+                    <select id="edit-stock-status" class="form-select">
+                      <option value="em_estoque">✅ Em Estoque</option>
+                      <option value="aguardando">🚚 A Caminho</option>
+                      <option value="incerto">❓ Incerto</option>
+                    </select>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -393,6 +412,25 @@
           <!-- Summary chips: populated by Reservations.renderSummary() -->
           <div id="reservations-summary" class="reservations-summary mt-4"></div>
 
+          <!-- Filtros de Reservas -->
+          <div class="card mt-4" style="padding: 1rem 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <i class='bx bx-filter-alt' style="color: var(--primary); font-size: 1.1rem;"></i>
+              <select id="res-filter-product" class="form-select" style="flex: 1; min-width: 180px; max-width: 280px;">
+                <option value="">Todos os Produtos</option>
+              </select>
+              <select id="res-filter-payment" class="form-select" style="flex: 1; min-width: 160px; max-width: 220px;">
+                <option value="">Todos os Pagamentos</option>
+                <option value="unpaid">Não Pago</option>
+                <option value="partial">Parcial</option>
+                <option value="paid">Pago</option>
+              </select>
+              <button id="res-filter-clear" class="btn-secondary" style="white-space: nowrap;">
+                <i class='bx bx-x'></i> Limpar Filtros
+              </button>
+            </div>
+          </div>
+
           <div class="card mt-4">
             <div class="table-responsive">
               <table class="data-table" id="reservations-table">
@@ -406,6 +444,8 @@
                     <th>Telefone</th>
                     <th>Endereço</th>
                     <th>Personalização</th>
+                    <th>Status Estoque</th>
+                    <th>Pagamento</th>
                     <th>Ações</th>
                   </tr>
                 </thead>

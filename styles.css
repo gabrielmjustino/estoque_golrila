@@ -466,6 +466,14 @@ body {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
+/* Colunas de quantidade individual (Júlio / Justino) */
+.tag.qtd-person {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
 .btn-icon {
   background: transparent;
   border: none;
@@ -1413,4 +1421,78 @@ body {
 /* Garante que a linha com draggable não bloqueie cliques nos botões */
 .data-table tbody tr[draggable="true"] td:not(.drag-handle-cell) {
   cursor: default;
+}
+
+/* ==================== STOCK STATUS BADGES ==================== */
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.stock-badge.stock-ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.stock-badge.stock-waiting {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.stock-badge.stock-uncertain {
+  background: rgba(156, 163, 175, 0.12);
+  color: #9ca3af;
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+/* ==================== PAYMENT STATUS BADGES ==================== */
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all 0.2s ease;
+}
+
+.payment-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+
+.payment-badge:active {
+  transform: scale(0.97);
+}
+
+.payment-badge.unpaid {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.payment-badge.partial {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.payment-badge.paid {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
 }
