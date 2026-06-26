@@ -1110,6 +1110,17 @@ body {
   gap: 0;
 }
 
+/* Variante full-width para o toggle de dono do estoque */
+.owner-toggle {
+  display: flex;
+  width: 100%;
+  max-width: 280px;
+}
+
+.owner-toggle .toggle-btn {
+  flex: 1;
+}
+
 .personalization-toggle .toggle-btn {
   padding: 0.55rem 1.4rem;
   background: transparent;
