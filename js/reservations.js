@@ -275,8 +275,9 @@ const Reservations = {
         const qtd = parseInt(document.getElementById('reserve-qtd').value);
         const persYesActive = document.getElementById('reserve-pers-yes')?.classList.contains('active');
         const personalization = persYesActive ? (document.getElementById('reserve-personalization-text')?.value.trim() || null) : null;
+        const owner = document.getElementById('reserve-owner-justino')?.classList.contains('active') ? 'justino' : 'julio';
 
-        await Reservations.makeReservation(productId, customerName, customerAddress, customerPhone, qtd, personalization);
+        await Reservations.makeReservation(productId, customerName, customerAddress, customerPhone, qtd, personalization, owner);
         closeModal();
       });
     }
@@ -304,36 +305,57 @@ const Reservations = {
     document.getElementById('reserve-customer-address').value = '';
     document.getElementById('reserve-customer-phone').value = '';
 
+    // Resetar owner toggle e mostrar hint de saldo
+    const julioBtn   = document.getElementById('reserve-owner-julio');
+    const justinoBtn = document.getElementById('reserve-owner-justino');
+    if (julioBtn)   julioBtn.classList.add('active');
+    if (justinoBtn) justinoBtn.classList.remove('active');
+    const hint = document.getElementById('reserve-owner-stock-hint');
+    if (hint) hint.textContent = `Júlio: ${product.qtd_julio ?? 0} uni. \u00b7 Justino: ${product.qtd_justino ?? 0} uni.`;
+
     document.getElementById('modal-reserve-product').classList.add('active');
   },
 
-  makeReservation: async (productId, customerName, customerAddress, customerPhone, qtd, personalization = null) => {
+  makeReservation: async (productId, customerName, customerAddress, customerPhone, qtd, personalization = null, owner = 'julio') => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Produto não encontrado no inventário.', 'error');
       return;
     }
 
-    if (Inventory.products[pIndex].qtd < qtd) {
-      Toast.show(`Quantidade solicitada excede o estoque de ${Inventory.products[pIndex].qtd} unidades.`, 'error');
+    const prod = Inventory.products[pIndex];
+
+    if (prod.qtd < qtd) {
+      Toast.show(`Quantidade solicitada excede o estoque de ${prod.qtd} unidades.`, 'error');
       return;
     }
 
-    const productName = Inventory.products[pIndex].name;
-    const newQtd = Inventory.products[pIndex].qtd - qtd;
+    // Validar saldo do owner
+    const ownerField = owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+    const ownerStock = prod[ownerField] ?? 0;
+    const ownerName  = owner === 'justino' ? 'Justino' : 'Júlio';
+    if (ownerStock < qtd) {
+      Toast.show(`${ownerName} tem apenas ${ownerStock} uni. disponível(is). Ajuste a quantidade ou mude o proprietário.`, 'warning');
+      return;
+    }
+
+    const productName = prod.name;
+    const newQtd      = prod.qtd - qtd;
+    const newOwnerQtd = ownerStock - qtd;
 
     const [invResult, resResult] = await Promise.all([
-      AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
+      AppSupabase.from('inventory').update({ qtd: newQtd, [ownerField]: newOwnerQtd }).eq('id', productId),
       AppSupabase.from('reservations').insert([{
         product_id: productId,
         product_name: productName,
-        size: Inventory.products[pIndex].size || null,
-        color: Inventory.products[pIndex].color || null,
+        size: prod.size || null,
+        color: prod.color || null,
         customer_name: customerName,
         customer_address: customerAddress,
         customer_phone: customerPhone,
         qtd_reserved: qtd,
-        personalization: personalization || null
+        personalization: personalization || null,
+        owner: owner
       }]).select()
     ]);
 
@@ -348,7 +370,8 @@ const Reservations = {
     }
 
     // Optimistic local update
-    Inventory.products[pIndex].qtd = newQtd;
+    prod.qtd = newQtd;
+    prod[ownerField] = newOwnerQtd;
     Inventory.render();
 
     await Reservations.load();
@@ -409,8 +432,12 @@ const Reservations = {
 
     const pIndex = Inventory.products.findIndex(p => p.id === res.product_id);
     if (pIndex !== -1) {
-      const newQtd = Inventory.products[pIndex].qtd + res.qtd_reserved;
-      ops.push(AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', res.product_id));
+      const prod = Inventory.products[pIndex];
+      const newQtd = prod.qtd + res.qtd_reserved;
+      // Devolver ao owner da reserva
+      const ownerField = res.owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+      const newOwnerQtd = (prod[ownerField] ?? 0) + res.qtd_reserved;
+      ops.push(AppSupabase.from('inventory').update({ qtd: newQtd, [ownerField]: newOwnerQtd }).eq('id', res.product_id));
     }
 
     const results = await Promise.all(ops);
@@ -421,7 +448,10 @@ const Reservations = {
       Reservations.render();
 
       if (pIndex !== -1) {
-        Inventory.products[pIndex].qtd += res.qtd_reserved;
+        const prod = Inventory.products[pIndex];
+        prod.qtd += res.qtd_reserved;
+        const ownerField = res.owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+        prod[ownerField] = (prod[ownerField] ?? 0) + res.qtd_reserved;
         Inventory.render();
       }
 

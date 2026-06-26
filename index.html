@@ -699,6 +699,14 @@
               </select>
             </div>
             <div class="input-group" style="grid-column: span 2;">
+              <label>Saída de <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">(obrigatório)</span></label>
+              <div class="personalization-toggle" id="sell-owner-toggle">
+                <button type="button" class="toggle-btn active" id="sell-owner-julio" data-value="julio">Júlio</button>
+                <button type="button" class="toggle-btn" id="sell-owner-justino" data-value="justino">Justino</button>
+              </div>
+              <small id="sell-owner-stock-hint" style="color:var(--text-muted);font-size:0.78rem;margin-top:4px;display:block;"></small>
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
               <label>Personalização</label>
               <div class="personalization-toggle" id="sell-personalization-toggle">
                 <button type="button" class="toggle-btn active" id="sell-pers-no" data-value="no">Não</button>
@@ -747,6 +755,14 @@
           <div class="input-group" style="grid-column: span 2;">
             <label>Quantidade a Reservar (<span id="reserve-product-max"></span>)</label>
             <input type="number" id="reserve-qtd" min="1" required>
+          </div>
+          <div class="input-group" style="grid-column: span 2;">
+            <label>Saída de <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">(obrigatório)</span></label>
+            <div class="personalization-toggle" id="reserve-owner-toggle">
+              <button type="button" class="toggle-btn active" id="reserve-owner-julio" data-value="julio">Júlio</button>
+              <button type="button" class="toggle-btn" id="reserve-owner-justino" data-value="justino">Justino</button>
+            </div>
+            <small id="reserve-owner-stock-hint" style="color:var(--text-muted);font-size:0.78rem;margin-top:4px;display:block;"></small>
           </div>
           <div class="input-group" style="grid-column: span 2;">
             <label>Personalização</label>

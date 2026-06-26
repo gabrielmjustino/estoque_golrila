@@ -190,6 +190,16 @@ const Sales = {
       if (persText) { persText.style.display = 'none'; persText.value = ''; }
     };
 
+    // Reset owner toggle to Júlio
+    const resetOwner = () => {
+      const julioBtn   = document.getElementById('sell-owner-julio');
+      const justinoBtn = document.getElementById('sell-owner-justino');
+      if (julioBtn)   julioBtn.classList.add('active');
+      if (justinoBtn) justinoBtn.classList.remove('active');
+      const hint = document.getElementById('sell-owner-stock-hint');
+      if (hint) hint.textContent = '';
+    };
+
     const closeModal = () => {
       if (modalSell) {
         modalSell.classList.remove('active');
@@ -199,6 +209,7 @@ const Sales = {
       }
       if (formSell) formSell.reset();
       resetPersonalization();
+      resetOwner();
     };
 
     if (btnCloseSell) btnCloseSell.addEventListener('click', closeModal);
@@ -208,6 +219,32 @@ const Sales = {
     if (modalSell) {
       modalSell.addEventListener('click', (e) => {
         if (e.target === modalSell) closeModal();
+      });
+    }
+
+    // Owner toggle (Júlio / Justino)
+    const ownerJulio   = document.getElementById('sell-owner-julio');
+    const ownerJustino = document.getElementById('sell-owner-justino');
+    const ownerHint    = document.getElementById('sell-owner-stock-hint');
+
+    const _getOwnerHintText = (owner) => {
+      const productId = document.getElementById('sell-product-id')?.value;
+      const prod = productId ? Inventory.products.find(p => p.id === productId) : null;
+      if (!prod) return '';
+      const qty = owner === 'julio' ? (prod.qtd_julio ?? 0) : (prod.qtd_justino ?? 0);
+      return `Saldo disponível: ${qty} uni.`;
+    };
+
+    if (ownerJulio && ownerJustino) {
+      ownerJulio.addEventListener('click', () => {
+        ownerJulio.classList.add('active');
+        ownerJustino.classList.remove('active');
+        if (ownerHint) ownerHint.textContent = _getOwnerHintText('julio');
+      });
+      ownerJustino.addEventListener('click', () => {
+        ownerJustino.classList.add('active');
+        ownerJulio.classList.remove('active');
+        if (ownerHint) ownerHint.textContent = _getOwnerHintText('justino');
       });
     }
 
@@ -242,8 +279,9 @@ const Sales = {
         const totalPrice = parseFloat(document.getElementById('sell-total-price').value);
         const persYesActive = document.getElementById('sell-pers-yes')?.classList.contains('active');
         const personalization = persYesActive ? (document.getElementById('sell-personalization-text')?.value.trim() || null) : null;
+        const owner = document.getElementById('sell-owner-justino')?.classList.contains('active') ? 'justino' : 'julio';
 
-        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization);
+        Sales.processSale(productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization, owner);
       });
     }
   },
@@ -268,8 +306,16 @@ const Sales = {
     document.getElementById('sell-product-color').textContent = product.color || '—';
     document.getElementById('sell-product-max').textContent = `Máx disponível: ${product.qtd}`;
     document.getElementById('sell-qtd').max = product.qtd;
-    document.getElementById('sell-qtd').value = 1; // Default to 1
+    document.getElementById('sell-qtd').value = 1;
     document.getElementById('sell-total-price').value = '';
+
+    // Resetar owner toggle e mostrar hint de saldo
+    const julioBtn   = document.getElementById('sell-owner-julio');
+    const justinoBtn = document.getElementById('sell-owner-justino');
+    if (julioBtn)   julioBtn.classList.add('active');
+    if (justinoBtn) justinoBtn.classList.remove('active');
+    const hint = document.getElementById('sell-owner-stock-hint');
+    if (hint) hint.textContent = `Júlio: ${product.qtd_julio ?? 0} uni. \u00b7 Justino: ${product.qtd_justino ?? 0} uni.`;
 
     // Auto fill seller input if possible
     const currentSession = Auth.getCurrentUser();
@@ -300,8 +346,12 @@ const Sales = {
     ];
 
     if (pIndex !== -1) {
-      const newQtd = Inventory.products[pIndex].qtd + sale.qtd_sold;
-      ops.push(AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', sale.product_id));
+      const prod = Inventory.products[pIndex];
+      const newQtd = prod.qtd + sale.qtd_sold;
+      // Devolver ao owner da venda
+      const ownerField = sale.owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+      const newOwnerQtd = (prod[ownerField] ?? 0) + sale.qtd_sold;
+      ops.push(AppSupabase.from('inventory').update({ qtd: newQtd, [ownerField]: newOwnerQtd }).eq('id', sale.product_id));
     } else {
       Toast.show('Aviso: O produto original foi excluído. Venda removida sem devolver o estoque.', 'warning');
     }
@@ -319,7 +369,10 @@ const Sales = {
       }
 
       if (pIndex !== -1) {
-        Inventory.products[pIndex].qtd += sale.qtd_sold;
+        const prod = Inventory.products[pIndex];
+        prod.qtd += sale.qtd_sold;
+        const ownerField = sale.owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+        prod[ownerField] = (prod[ownerField] ?? 0) + sale.qtd_sold;
         Inventory.render();
       }
 
@@ -334,7 +387,7 @@ const Sales = {
     }
   },
 
-  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization = null) => {
+  processSale: async (productId, buyerName, sellerName, qtdSold, paymentMethod, totalPrice, personalization = null, owner = 'julio') => {
     const pIndex = Inventory.products.findIndex(p => p.id === productId);
     if (pIndex === -1) {
       Toast.show('Desculpe, ocorreu um erro na leitura do inventario.', 'error');
@@ -345,9 +398,21 @@ const Sales = {
     const sellIdEl = document.getElementById('sell-product-id');
     const fromReservation = sellIdEl && !!sellIdEl.dataset.reservationId;
 
-    if (!fromReservation && Inventory.products[pIndex].qtd < qtdSold) {
-      Toast.show(`Quantidade solicitada excede o estoque limite de ${Inventory.products[pIndex].qtd}.`, 'error');
-      return;
+    const prod = Inventory.products[pIndex];
+
+    if (!fromReservation) {
+      if (prod.qtd < qtdSold) {
+        Toast.show(`Quantidade solicitada excede o estoque limite de ${prod.qtd}.`, 'error');
+        return;
+      }
+      // Validar saldo do owner
+      const ownerField = owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+      const ownerStock = prod[ownerField] ?? 0;
+      const ownerName  = owner === 'justino' ? 'Justino' : 'Júlio';
+      if (ownerStock < qtdSold) {
+        Toast.show(`${ownerName} tem apenas ${ownerStock} uni. disponível(is). Ajuste a quantidade ou mude o proprietário.`, 'warning');
+        return;
+      }
     }
 
     if (isNaN(totalPrice) || totalPrice <= 0) {
@@ -356,21 +421,23 @@ const Sales = {
     }
 
     // Capture product name BEFORE any async reload (avoids stale index bug)
-    const productName = Inventory.products[pIndex].name;
-    const newQtd = Inventory.products[pIndex].qtd - (fromReservation ? 0 : qtdSold);
+    const productName = prod.name;
+    const ownerField  = owner === 'justino' ? 'qtd_justino' : 'qtd_julio';
+    const newQtd      = prod.qtd - (fromReservation ? 0 : qtdSold);
+    const newOwnerQtd = (prod[ownerField] ?? 0) - (fromReservation ? 0 : qtdSold);
 
     const tDate = new Date().toISOString().split('T')[0];
 
-    // Se vier de reserva, NAO atualiza estoque novamente (ja foi deduzido na reserva)
     const saleInsertPromise = AppSupabase.from('sales').insert([{
       product_id: productId,
       product_name: productName,
-      size: Inventory.products[pIndex].size || null,
+      size: prod.size || null,
       buyer_name: buyerName,
       seller_name: sellerName,
       qtd_sold: qtdSold,
       payment_method: paymentMethod,
-      personalization: personalization || null
+      personalization: personalization || null,
+      owner: owner
     }]).select();
 
     let invResult = { error: null };
@@ -380,7 +447,7 @@ const Sales = {
       saleResult = await saleInsertPromise;
     } else {
       [invResult, saleResult] = await Promise.all([
-        AppSupabase.from('inventory').update({ qtd: newQtd }).eq('id', productId),
+        AppSupabase.from('inventory').update({ qtd: newQtd, [ownerField]: newOwnerQtd }).eq('id', productId),
         saleInsertPromise
       ]);
     }
@@ -414,7 +481,8 @@ const Sales = {
 
     // Atualiza estado local apenas se nao veio de reserva (evita dupla deducao)
     if (!fromReservation) {
-      Inventory.products[pIndex].qtd = newQtd;
+      prod.qtd = newQtd;
+      prod[ownerField] = newOwnerQtd;
       Inventory.render();
     }
 
